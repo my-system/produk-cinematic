@@ -1,0 +1,4292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advan Workplus Air — Eksplorasi Produk 3D Sinematik</title>
+  <meta name="description" content="Pengalaman web 3D sinematik Advan Workplus Air. Bodi aluminium anodized 16mm, layar 14 inci 16:10, AMD Ryzen 5, dan arsitektur 20 komponen presisi.">
+
+  <!-- Tipografi: Plus Jakarta Sans, Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@200;300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Import Map Three.js r160 (CDN jsdelivr pinned) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- GSAP & ScrollTrigger 3.12.5 (CDN cdnjs pinned) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <style>
+    /* =============================================================
+       1. DESIGN SYSTEM & STUDIO VARIABLES (#0b0d12 -> #161b26)
+    ============================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-top: #0b0d12;
+      --bg-bottom: #1a1f2b;
+      --text-white: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-ice: #7cc4ff;
+      --accent-teal: #2f4a57;
+      --card-bg: rgba(12, 15, 22, 0.78);
+      --card-border: rgba(255, 255, 255, 0.10);
+      --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    html, body {
+      width: 100%;
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+      background-attachment: fixed;
+      color: var(--text-white);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body.is-locked {
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* =============================================================
+       2. BACKGROUND CANVAS & SUBTLE STUDIO BACKDROP
+    ============================================================= */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
+      outline: none;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 62% 48%, rgba(47, 74, 87, 0.22) 0%, rgba(26, 31, 43, 0.08) 52%, transparent 75%),
+        linear-gradient(180deg, #0b0d12 0%, #1a1f2b 100%);
+    }
+
+    /* Gradient Scrim di kolom kiri agar teks tidak pernah bertabrakan secara visual */
+    .left-text-scrim {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 42vw;
+      height: 100vh;
+      z-index: 5;
+      pointer-events: none;
+      background: linear-gradient(90deg, rgba(11, 13, 18, 0.86) 0%, rgba(11, 13, 18, 0.52) 62%, transparent 100%);
+      transition: opacity 0.4s ease;
+    }
+
+    body.scrim-hidden .left-text-scrim {
+      opacity: 0;
+    }
+
+    /* =============================================================
+       3. TOP NAVBAR (Hanya Logo & Satu Tombol "Pesan Sekarang")
+    ============================================================= */
+    .brand-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 64px;
+      padding: 0 4vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 60;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(11, 13, 18, 0.88) 0%, rgba(11, 13, 18, 0.0) 100%);
+    }
+
+    .brand-logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+
+    .brand-logo-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-ice);
+    }
+
+    .brand-logo span {
+      color: var(--accent-ice);
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      pointer-events: auto;
+    }
+
+    .nav-cta-mini {
+      background: #f3f4f6;
+      color: #0b0d12;
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 9px 20px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .nav-cta-mini:hover {
+      transform: scale(1.03);
+      background: #ffffff;
+    }
+
+    /* =============================================================
+       4. FLOATING CHAPTER DOCK (BOTTOM NAVIGATION BAR)
+    ============================================================= */
+    .chapter-dock {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px;
+      height: 44px;
+      background: rgba(11, 14, 21, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 999px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+    }
+
+    .chapter-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 6px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chapter-btn .ch-num {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      opacity: 0.55;
+    }
+
+    .chapter-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .chapter-btn.active {
+      color: #0b0d12;
+      background: var(--text-white);
+      font-weight: 600;
+    }
+
+    /* =============================================================
+       5. PRELOADER
+    ============================================================= */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: #0b0d12;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.7s ease, visibility 0.7s;
+    }
+
+    #preloader.loaded {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent-ice);
+      margin-bottom: 12px;
+    }
+
+    .loader-brand {
+      font-family: var(--font-display);
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 300;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      color: #ffffff;
+    }
+
+    .loader-bar-wrap {
+      width: 220px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .loader-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--accent-ice);
+      transition: width 0.15s ease-out;
+    }
+
+    .loader-pct {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    /* =============================================================
+       6. STORY SCROLL SECTIONS (Kolom Kiri <= 32vw, Bebas Tumpuk)
+    ============================================================= */
+    #scroll-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    /* TAHAP 0: HERO INTRO (Kolom Kiri Maks 32vw di Desktop) */
+    .section-hero {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      text-align: left;
+      padding: 72px 4vw 76px;
+      position: relative;
+    }
+
+    .hero-top-group {
+      width: 100%;
+      max-width: 32vw;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-ice);
+      background: rgba(124, 196, 255, 0.08);
+      border: 1px solid rgba(124, 196, 255, 0.22);
+      padding: 5px 13px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3.1vw, 46px);
+      font-weight: 700;
+      line-height: 1.14;
+      letter-spacing: -0.8px;
+      color: #ffffff;
+      margin-bottom: 14px;
+    }
+
+    .hero-title .word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(20px);
+      margin-right: 0.2em;
+    }
+
+    .hero-sub {
+      font-size: clamp(13px, 1.05vw, 15px);
+      color: var(--text-muted);
+      line-height: 1.6;
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    .hero-actions-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 22px;
+      opacity: 0;
+      transform: translateY(14px);
+      pointer-events: auto;
+    }
+
+    .hero-btn-primary {
+      background: #f3f4f6;
+      color: #0b0d12;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 11px 22px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .hero-btn-primary:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .hero-btn-secondary {
+      background: rgba(17, 21, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-white);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 13px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+
+    .hero-btn-secondary:hover {
+      border-color: var(--accent-ice);
+      color: var(--accent-ice);
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 72px;
+      left: 4vw;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: opacity 0.35s ease;
+    }
+
+    .scroll-hint-line {
+      width: 28px;
+      height: 1px;
+      background: var(--accent-ice);
+    }
+
+    /* TAHAP 1 & 3: KARTU TEKS KOLOM KIRI (Maks 32vw) */
+    .section-macro,
+    .section-action {
+      height: 130vh;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 0 4vw;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      padding: 28px 30px;
+      border-radius: 22px;
+      width: 100%;
+      max-width: 31vw;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55);
+      opacity: 0;
+      transform: translateY(28px);
+    }
+
+    .card-kicker {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-ice);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-kicker::before {
+      content: '';
+      width: 16px;
+      height: 1.5px;
+      background: var(--accent-ice);
+      display: inline-block;
+    }
+
+    .glass-card h2 {
+      font-family: var(--font-display);
+      font-size: clamp(20px, 2vw, 28px);
+      font-weight: 700;
+      line-height: 1.22;
+      letter-spacing: -0.4px;
+      margin-bottom: 12px;
+    }
+
+    .glass-card p {
+      font-size: clamp(12.5px, 0.95vw, 14px);
+      color: var(--text-muted);
+      line-height: 1.62;
+      margin-bottom: 18px;
+    }
+
+    .mini-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 14px;
+    }
+
+    .metric-box .m-val {
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .metric-box .m-val span {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent-ice);
+    }
+
+    .metric-box .m-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* TAHAP 2: EXPLODED VIEW ANATOMY */
+    .section-exploded {
+      height: 220vh;
+      position: relative;
+    }
+
+    .exploded-hud-header {
+      position: fixed;
+      top: 66px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      z-index: 20;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      width: max-content;
+      max-width: 92vw;
+    }
+
+    .exploded-hud-header.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .hud-pill-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .exploded-hud-header .hud-pill {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--text-white);
+      background: rgba(11, 14, 21, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 6px 14px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+
+    .hud-action-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent-ice);
+      background: rgba(12, 16, 24, 0.85);
+      border: 1px solid rgba(124, 196, 255, 0.32);
+      padding: 6px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .hud-action-pill:hover,
+    .hud-action-pill.active {
+      background: var(--accent-ice);
+      color: #0b0d12;
+    }
+
+    #leader-lines-svg {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    /* Leader line tegas di luar bounding box model */
+    .leader-line {
+      stroke: rgba(124, 196, 255, 0.95);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .leader-pulse {
+      fill: none;
+      stroke: var(--accent-ice);
+      stroke-width: 1.6;
+      display: none;
+      pointer-events: none;
+      transform-origin: center;
+      animation: anchorPulseRing 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+
+    @keyframes anchorPulseRing {
+      0% {
+        r: 4px;
+        opacity: 0.95;
+        stroke-width: 2px;
+      }
+      100% {
+        r: 18px;
+        opacity: 0.0;
+        stroke-width: 0.5px;
+      }
+    }
+
+    .leader-dot {
+      fill: #ffffff;
+      stroke: var(--accent-ice);
+      stroke-width: 2.5;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .floating-label {
+      position: fixed;
+      z-index: 16;
+      pointer-events: none;
+      background: rgba(11, 14, 22, 0.94);
+      border: 1px solid rgba(124, 196, 255, 0.42);
+      padding: 12px 18px;
+      border-radius: 12px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      color: var(--text-white);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.72);
+      opacity: 0;
+      transform: translateY(-50%) scale(0.95);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      width: 230px;
+      max-width: 28vw;
+    }
+
+    .floating-label.active {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .floating-label .fl-tag {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--accent-ice);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .floating-label .fl-title {
+      font-family: var(--font-display);
+      font-size: 16px; /* Min 15px per requirement! */
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+
+    .floating-label .fl-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* TAHAP 4: PLAYGROUND 360 STUDIO (Kontrol di atas nav bawah >= 16px, tidak pernah bertumpuk) */
+    .section-playground {
+      height: 105vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 68px 4vw 78px;
+      position: relative;
+    }
+
+    .playground-header {
+      text-align: center;
+      pointer-events: none;
+      background: rgba(11, 13, 18, 0.62);
+      padding: 8px 20px;
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .playground-header h3 {
+      font-family: var(--font-display);
+      font-size: clamp(18px, 2.2vw, 26px);
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 2px;
+    }
+
+    .playground-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .orbit-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent-ice);
+      margin-top: 4px;
+    }
+
+    /* Bar Kontrol Studio diletakkan di atas .chapter-dock (bottom 14px + 44px + jarak >= 20px = 78px) */
+    .playground-studio-bar {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      background: rgba(11, 14, 21, 0.90);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      padding: 9px 18px;
+      border-radius: 999px;
+      pointer-events: auto;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.65);
+      z-index: 30;
+      margin-bottom: 4px;
+      max-width: 94vw;
+      overflow-x: auto;
+    }
+
+    .studio-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .studio-divider {
+      width: 1px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    .color-swatches {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .swatch-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .swatch-btn::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .swatch-btn.active::after {
+      border-color: var(--accent-ice);
+    }
+
+    .swatch-label {
+      font-size: 12px;
+      color: var(--text-white);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .studio-action-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-white);
+      font-family: var(--font-body);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 7px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .studio-action-btn:hover {
+      border-color: var(--accent-ice);
+      color: #ffffff;
+    }
+
+    .studio-action-btn.active {
+      background: var(--accent-ice);
+      color: #0b0d12;
+      border-color: var(--accent-ice);
+    }
+
+    /* Tooltip Komponen Studio 360: selalu di samping luar bodi laptop */
+    #hover-tooltip {
+      position: fixed;
+      z-index: 50;
+      pointer-events: none;
+      background: rgba(10, 13, 20, 0.94);
+      border: 1px solid rgba(124, 196, 255, 0.45);
+      padding: 8px 13px;
+      border-radius: 10px;
+      backdrop-filter: blur(12px);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ffffff;
+      display: none;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+    }
+
+    #hover-tooltip span {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 10.5px;
+      color: var(--accent-ice);
+      margin-top: 2px;
+    }
+
+    /* TAHAP 5: BENTO SPESIFIKASI & CTA (Kolom Kiri Maks 32vw di Desktop) */
+    .section-closing {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 72px 4vw 92px;
+      position: relative;
+    }
+
+    .specs-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border-radius: 24px;
+      padding: 26px 28px;
+      max-width: 32vw;
+      width: 100%;
+      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.65);
+      pointer-events: auto;
+    }
+
+    .specs-card h2 {
+      font-family: var(--font-display);
+      font-size: clamp(20px, 2.2vw, 28px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .specs-card .specs-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .bento-specs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .spec-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 10px 12px;
+      border-radius: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+    }
+
+    .spec-icon {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      color: var(--accent-ice);
+      margin-top: 2px;
+    }
+
+    .spec-item strong {
+      color: var(--text-white);
+      display: block;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 1px;
+    }
+
+    .spec-item span {
+      color: var(--text-muted);
+      font-size: 10px;
+      line-height: 1.35;
+      display: block;
+    }
+
+    .cta-btn {
+      width: 100%;
+      padding: 13px 24px;
+      background: #f3f4f6;
+      color: #0b0d12;
+      border: none;
+      border-radius: 999px;
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s, background-color 0.2s;
+      text-decoration: none;
+    }
+
+    .cta-btn:hover {
+      background: #ffffff;
+      transform: scale(1.015);
+    }
+
+    .site-footer {
+      position: absolute;
+      bottom: 66px;
+      left: 4vw;
+      right: 4vw;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: #6b7280;
+      pointer-events: auto;
+    }
+
+    #toast-msg {
+      position: fixed;
+      top: 76px;
+      right: 4vw;
+      background: rgba(12, 16, 26, 0.95);
+      border: 1px solid var(--accent-ice);
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 500;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      z-index: 250;
+      opacity: 0;
+      transform: translateY(-12px);
+      pointer-events: none;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #toast-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #error-fallback {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0b0d12;
+      z-index: 300;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 30px;
+    }
+
+    #error-fallback.active {
+      display: flex;
+    }
+
+    /* Penyesuaian layar 1366x768 (tinggi <= 800px) */
+    @media (max-height: 800px) and (min-width: 769px) {
+      .brand-nav { height: 54px; }
+      .section-hero { padding: 58px 4vw 64px; }
+      .hero-title { font-size: clamp(24px, 2.7vw, 36px); margin-bottom: 10px; }
+      .hero-sub { font-size: 12.5px; }
+      .hero-actions-group { margin-top: 16px; }
+      .glass-card { padding: 20px 24px; }
+      .glass-card h2 { font-size: 21px; margin-bottom: 8px; }
+      .glass-card p { font-size: 12.5px; margin-bottom: 14px; }
+      .specs-card { padding: 18px 22px; }
+      .specs-card h2 { font-size: 20px; }
+      .specs-card .specs-subtitle { margin-bottom: 10px; font-size: 11.5px; }
+      .bento-specs-grid { gap: 6px; margin-bottom: 12px; }
+      .spec-item { padding: 7px 10px; }
+      .cta-btn { padding: 10px 20px; font-size: 12.5px; }
+      .section-playground { padding: 58px 4vw 74px; }
+    }
+
+    /* Penyesuaian Mobile (390x844 & < 768px): Teks di area atas/bawah khusus, tidak menimpa model */
+    @media (max-width: 768px) {
+      .brand-nav { height: 56px; padding: 0 16px; }
+      .brand-logo { font-size: 14px; letter-spacing: 1.5px; }
+      .nav-cta-mini { padding: 7px 14px; font-size: 11.5px; }
+
+      .left-text-scrim {
+        width: 100vw;
+        height: 44vh;
+        background: linear-gradient(180deg, rgba(11, 13, 18, 0.90) 0%, rgba(11, 13, 18, 0.55) 70%, transparent 100%);
+      }
+
+      .section-hero {
+        justify-content: flex-start;
+        padding: 64px 16px 76px;
+      }
+
+      .hero-top-group {
+        max-width: 100%;
+      }
+
+      .hero-title {
+        font-size: 25px;
+        margin-bottom: 8px;
+      }
+
+      .hero-sub {
+        font-size: 12.5px;
+        line-height: 1.48;
+      }
+
+      .hero-actions-group {
+        margin-top: 12px;
+        gap: 8px;
+      }
+
+      .hero-btn-primary, .hero-btn-secondary {
+        padding: 8px 15px;
+        font-size: 12px;
+      }
+
+      .scroll-hint {
+        bottom: 66px;
+        left: 16px;
+      }
+
+      .section-macro,
+      .section-action {
+        align-items: flex-start;
+        padding: 64px 16px 80px;
+      }
+
+      .glass-card {
+        max-width: 100%;
+        padding: 18px 20px;
+        border-radius: 18px;
+      }
+
+      .glass-card h2 { font-size: 19px; margin-bottom: 6px; }
+      .glass-card p { font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+      .mini-metrics { padding-top: 10px; }
+      .metric-box .m-val { font-size: 16px; }
+
+      .exploded-hud-header { top: 58px; }
+      .exploded-hud-header .hud-pill { font-size: 9px; padding: 5px 10px; letter-spacing: 1px; }
+      .hud-action-pill { font-size: 9px; padding: 5px 10px; }
+
+      .floating-label {
+        width: 162px;
+        max-width: 44vw;
+        padding: 8px 11px;
+      }
+      .floating-label .fl-title { font-size: 15px; }
+      .floating-label .fl-sub { font-size: 10.5px; }
+
+      .section-playground {
+        padding: 60px 12px 76px;
+      }
+
+      .playground-header { padding: 6px 12px; }
+      .playground-header h3 { font-size: 17px; }
+      .playground-header p { font-size: 11px; }
+
+      .playground-studio-bar {
+        width: 94vw;
+        justify-content: flex-start;
+        padding: 8px 12px;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+
+      .swatch-label { min-width: auto; font-size: 11px; }
+      .studio-action-btn { padding: 6px 10px; font-size: 11px; }
+
+      .chapter-dock {
+        bottom: 12px;
+        height: 40px;
+        max-width: 94vw;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 4px 6px;
+      }
+
+      .chapter-btn { padding: 5px 10px; font-size: 10.5px; }
+      .chapter-btn .ch-num { display: none; }
+
+      .section-closing {
+        align-items: flex-end;
+        padding: 62px 14px 74px;
+      }
+
+      .specs-card {
+        max-width: 100%;
+        padding: 16px 16px;
+        border-radius: 18px;
+      }
+
+      .specs-card h2 { font-size: 18px; }
+      .specs-card .specs-subtitle { font-size: 11px; margin-bottom: 10px; }
+      .bento-specs-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px; }
+      .spec-item { padding: 7px 8px; gap: 6px; }
+      .spec-item strong { font-size: 10.5px; }
+      .spec-item span { font-size: 9px; }
+      .cta-btn { padding: 10px 16px; font-size: 12.5px; }
+      .site-footer { display: none; }
+    }
+  </style>
+</head>
+<body class="is-locked">
+
+  <div class="ambient-glow" id="ambientGlow"></div>
+  <div class="left-text-scrim" id="leftTextScrim"></div>
+  <canvas id="webgl-canvas" role="img" aria-label="Visualisasi 3D Fotorealistik Laptop Advan Workplus Air"></canvas>
+
+  <!-- Navbar: Hanya Logo & Satu Tombol "Pesan Sekarang" -->
+  <header class="brand-nav">
+    <a href="#sec-hero" class="brand-logo">
+      <span class="brand-logo-dot"></span>
+      ΛDVΛN <span>Workplus Air</span>
+    </a>
+    <div class="nav-right">
+      <a href="#sec-closing" class="nav-cta-mini">Pesan Sekarang</a>
+    </div>
+  </header>
+
+  <!-- Floating Chapter Dock -->
+  <nav class="chapter-dock" id="chapterDock" aria-label="Navigasi Tahap Cerita">
+    <button class="chapter-btn active" data-target="#sec-hero"><span class="ch-num">01</span>Intro</button>
+    <button class="chapter-btn" data-target="#sec-macro"><span class="ch-num">02</span>Bodi Anodized</button>
+    <button class="chapter-btn" data-target="#sec-exploded"><span class="ch-num">03</span>Anatomi 3D</button>
+    <button class="chapter-btn" data-target="#sec-action"><span class="ch-num">04</span>Layar & Performa</button>
+    <button class="chapter-btn" data-target="#sec-playground"><span class="ch-num">05</span>Studio 360°</button>
+    <button class="chapter-btn" data-target="#sec-closing"><span class="ch-num">06</span>Spesifikasi</button>
+  </nav>
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-badge">HIGH-DEFINITION 3D PRODUCT SHOWCASE</div>
+    <div class="loader-brand">ΛDVΛN WORKPLUS AIR</div>
+    <div class="loader-bar-wrap">
+      <div class="loader-bar" id="loaderBar"></div>
+    </div>
+    <div class="loader-pct" id="loaderPct">MEMUAT TEKSTUR & ARSITEKTUR 3D 0%</div>
+  </div>
+
+  <!-- HUD Header Exploded View -->
+  <div class="exploded-hud-header" id="explodedHudHeader">
+    <div class="hud-pill-group">
+      <span class="hud-pill">ARSITEKTUR INTERNAL • 20 KOMPONEN PRESISI</span>
+      <button id="btnOrbitExploded" class="hud-action-pill" title="Putar Sudut Kamera 360°">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+        <span>Sudut 360°</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SVG Leader Lines Exploded View -->
+  <svg id="leader-lines-svg">
+    <line id="line1" class="leader-line" x1="0" y1="0" x2="0" y2="0" />
+    <circle id="pulse1" class="leader-pulse" cx="0" cy="0" r="8" />
+    <circle id="dot1" class="leader-dot" cx="0" cy="0" r="4.5" />
+
+    <line id="line2" class="leader-line" x1="0" y1="0" x2="0" y2="0" />
+    <circle id="pulse2" class="leader-pulse" cx="0" cy="0" r="8" />
+    <circle id="dot2" class="leader-dot" cx="0" cy="0" r="4.5" />
+
+    <line id="line3" class="leader-line" x1="0" y1="0" x2="0" y2="0" />
+    <circle id="pulse3" class="leader-pulse" cx="0" cy="0" r="8" />
+    <circle id="dot3" class="leader-dot" cx="0" cy="0" r="4.5" />
+
+    <line id="line4" class="leader-line" x1="0" y1="0" x2="0" y2="0" />
+    <circle id="pulse4" class="leader-pulse" cx="0" cy="0" r="8" />
+    <circle id="dot4" class="leader-dot" cx="0" cy="0" r="4.5" />
+  </svg>
+
+  <!-- 4 Floating Callout Labels Exploded View -->
+  <div id="lbl1" class="floating-label">
+    <span class="fl-tag">14.0" WUXGA 16:10</span>
+    <div class="fl-title">Layar</div>
+    <div class="fl-sub">Panel IPS 14" FHD+ Bezel Tipis & Sudut Pandang Luas</div>
+  </div>
+  <div id="lbl2" class="floating-label">
+    <span class="fl-tag">COOLING SYSTEM</span>
+    <div class="fl-title">Prosesor dan Pendingin</div>
+    <div class="fl-sub">Dual Heatpipe Tembaga Murni + Fan Sentrifugal Senyap</div>
+  </div>
+  <div id="lbl3" class="floating-label">
+    <span class="fl-tag">HIGH-CAPACITY CELL</span>
+    <div class="fl-title">Baterai</div>
+    <div class="fl-sub">3-Sel Li-Polymer 50.5 Wh • Pengisian Cepat Type-C 3.2</div>
+  </div>
+  <div id="lbl4" class="floating-label">
+    <span class="fl-tag">BACKLIT CHICLET KEYBOARD</span>
+    <div class="fl-title">Keyboard</div>
+    <div class="fl-sub">Keycaps Cekung Legend Putih Tajam & Touchpad Presisi</div>
+  </div>
+
+  <!-- Hover Inspector Tooltip -->
+  <div id="hover-tooltip">KOMPONEN<span>Klik atau seret untuk memutar</span></div>
+
+  <!-- Toast Notification -->
+  <div id="toast-msg">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4ff" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <span id="toastText">Pemesanan segera dibuka untuk varian pilihan Anda.</span>
+  </div>
+
+  <!-- Fallback Error -->
+  <div id="error-fallback">
+    <h2 style="color:#f87171; font-family:var(--font-display); margin-bottom:12px;">Model 3D Gagal Dimuat</h2>
+    <p style="color:var(--text-muted); max-width:480px; line-height:1.6; margin-bottom:24px;">
+      Pastikan berkas <code>laptop_advan_workplus_air.glb</code> tersedia dan jalankan melalui server lokal (<code>npx serve</code> atau <code>node server.mjs</code>).
+    </p>
+    <button class="cta-btn" style="max-width:220px; pointer-events:auto;" onclick="location.reload()">Muat Ulang</button>
+  </div>
+
+  <!-- =============================================================
+       MAIN SCROLL CONTAINER
+  ============================================================= -->
+  <main id="scroll-container">
+
+    <!-- TAHAP 0: INTRO HERO -->
+    <section class="section-hero" id="sec-hero">
+      <div class="hero-top-group">
+        <div class="hero-eyebrow" id="heroEyebrow">ΛDVΛN WORKPLUS AIR • RYZEN™ SERIES</div>
+        <h1 class="hero-title" id="heroTitle">Kerja Tanpa Batas. Ringan di Tangan Anda.</h1>
+        <p class="hero-sub" id="heroSub">
+          Sasis aluminium anodized warna Slate Blue-Grey dengan logo ΛDVΛN ikonik, keyboard chiclet presisi, dan performa AMD Ryzen™ & Radeon™ Graphics.
+        </p>
+
+        <div class="hero-actions-group" id="heroActionsGroup">
+          <button class="hero-btn-primary" id="btnHeroExplore">
+            Mulai Jelajah 3D
+          </button>
+          <button class="hero-btn-secondary" id="btnHeroTour">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Tur Sinematik 3D
+          </button>
+        </div>
+      </div>
+
+      <div class="scroll-hint" id="scrollHint">
+        <div class="scroll-hint-line"></div>
+        <span>Scroll untuk menjelajah</span>
+      </div>
+    </section>
+
+    <!-- TAHAP 1: CLOSE-UP MATERIAL -->
+    <section class="section-macro" id="sec-macro">
+      <div class="glass-card" id="cardMacro">
+        <div class="card-kicker">01 • Bodi & Port Lengkap</div>
+        <h2>Bodi Aluminium Tipis, Hanya 16 mm.</h2>
+        <p>
+          Permukaan matte sandblasted anodized yang elegan dengan logo ΛDVΛN di sisi punggung layar. Dilengkapi port lengkap: HDMI, 2× Type-C 3.2 di kiri, serta USB 3.2, Audio Jack, dan Type-C di kanan.
+        </p>
+        <div class="mini-metrics">
+          <div class="metric-box">
+            <div class="m-val">16<span> mm</span></div>
+            <div class="m-lbl">Ketebalan Sasis</div>
+          </div>
+          <div class="metric-box">
+            <div class="m-val">1.25<span> kg</span></div>
+            <div class="m-lbl">Ringan & Kokoh</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAHAP 2: EXPLODED VIEW -->
+    <section class="section-exploded" id="sec-exploded"></section>
+
+    <!-- TAHAP 3: FITUR DALAM AKSI -->
+    <section class="section-action" id="sec-action">
+      <div class="glass-card" id="cardAction">
+        <div class="card-kicker">03 • Visual & Pendingin</div>
+        <h2>Dingin, Senyap, dan Siap Bekerja Seharian.</h2>
+        <p>
+          Layar IPS 14 inci rasio 16:10 dengan bezel tipis berlogo ΛDVΛN menghadirkan tampilan Windows 11 yang tajam. Keyboard ber-legend putih menyala lembut ditemani aliran udara kipas yang senyap.
+        </p>
+        <div class="mini-metrics">
+          <div class="metric-box">
+            <div class="m-val">16:10<span> IPS</span></div>
+            <div class="m-lbl">Ruang Kerja Luas</div>
+          </div>
+          <div class="metric-box">
+            <div class="m-val">Ryzen™<span> 5</span></div>
+            <div class="m-lbl">Radeon™ Graphics</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAHAP 4: PLAYGROUND 360 STUDIO -->
+    <section class="section-playground" id="sec-playground">
+      <div class="playground-header">
+        <h3>Studio Interaktif 360°</h3>
+        <p>Periksa detail tombol keyboard, stiker Ryzen™ & Radeon™, port samping, hingga kisi ventilasi bawah</p>
+        <div class="orbit-hint">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+          Seret untuk memutar 360° • Scroll/Cubit untuk zoom
+        </div>
+      </div>
+
+      <!-- Bar Kontrol Studio (Dipisahkan >= 16px di atas menu navigasi bawah) -->
+      <div class="playground-studio-bar" id="studioBar">
+        <div class="studio-group">
+          <div class="color-swatches" role="radiogroup" aria-label="Pilihan Warna Laptop">
+            <button class="swatch-btn active" data-color="slateBlue" style="background: linear-gradient(135deg, #375563, #243944);" aria-label="Warna Teal Slate Advan (Asli)" aria-checked="true"></button>
+            <button class="swatch-btn" data-color="spaceGrey" style="background: linear-gradient(135deg, #525760, #32363d);" aria-label="Warna Abu Space" aria-checked="false"></button>
+            <button class="swatch-btn" data-color="silver" style="background: linear-gradient(135deg, #cfd5de, #9299a4);" aria-label="Warna Silver Murni" aria-checked="false"></button>
+          </div>
+          <span class="swatch-label" id="activeColorName">Teal Slate (Asli)</span>
+        </div>
+
+        <div class="studio-divider"></div>
+
+        <div class="studio-group">
+          <button class="studio-action-btn" id="btnToggleExplode">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            Bongkar / Pasang
+          </button>
+          <button class="studio-action-btn" id="btnToggleLid">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+            Tutup / Buka Layar
+          </button>
+          <button class="studio-action-btn" id="btnSwitchOS">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span id="osModeText">Layar: Windows 11 AI</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAHAP 5: BENTO SPESIFIKASI & CTA -->
+    <section class="section-closing" id="sec-closing">
+      <div class="specs-card">
+        <h2>Advan Workplus Air</h2>
+        <p class="specs-subtitle">Spesifikasi Lengkap Sesuai Unit Resmi & Buku Panduan</p>
+
+        <div class="bento-specs-grid">
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+            <div>
+              <strong>AMD Ryzen™ 5 Series</strong>
+              <span>AMD Radeon™ Graphics terintegrasi untuk kerja & kreasi</span>
+            </div>
+          </div>
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <div>
+              <strong>Layar 14.0" 16:10 IPS</strong>
+              <span>WUXGA (1920×1200) Anti-Glare + Kamera HD & LED</span>
+            </div>
+          </div>
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M4 15h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1z"/></svg>
+            <div>
+              <strong>16 GB RAM & 512 GB SSD</strong>
+              <span>Memori cepat LPDDR5 & penyimpanan M.2 NVMe</span>
+            </div>
+          </div>
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg>
+            <div>
+              <strong>Baterai 50.5 Wh Awet</strong>
+              <span>Dukungan pengisian daya cepat via Type-C 3.2</span>
+            </div>
+          </div>
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <div>
+              <strong>Port Sisi Kiri & Kanan</strong>
+              <span>Kiri: HDMI, 2× Type-C 3.2 • Kanan: USB 3.2, Audio, Type-C 2.0</span>
+            </div>
+          </div>
+          <div class="spec-item">
+            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+            <div>
+              <strong>Pendingin & Fan Outlet</strong>
+              <span>Kisi ventilasi bawah lebar & kaki karet anti-slip</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="#pesan" class="cta-btn" id="btnBuy" role="button">
+          <span>Pesan Sekarang — Rp 6.999.000</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+      <footer class="site-footer">
+        <div>Advan Workplus Air. Semua hak dilindungi pemiliknya.</div>
+        <div>Halaman Konsep Produk 3D Fotorealistik • Bukan Situs Resmi Advan</div>
+      </footer>
+    </section>
+
+  </main>
+
+  <!-- =============================================================
+       THREE.JS PHOTOREALISTIC ENGINE & FITCAMERA SYSTEM
+  ============================================================= -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { SAOPass } from 'three/addons/postprocessing/SAOPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* ===========================================================
+       1. OBJEK KONFIGURASI UTAMA (CONFIG)
+          Warna asli: Teal Gelap Matte (#2f4a57), Roughness 0.55, Metalness 0.60
+    =========================================================== */
+    const CONFIG = {
+      modelPath: 'laptop_advan_workplus_air.glb',
+      explodeScale: 1.0,
+      screenOpenAngle: 106,
+      screenOpenAxisInvert: true,
+
+      colors: {
+        slateBlue: { name: 'Teal Slate (Asli)', hex: '#2f4a57', threeHex: 0x2f4a57, rough: 0.55, metal: 0.60 },
+        spaceGrey: { name: 'Abu Space',         hex: '#3f444c', threeHex: 0x3f444c, rough: 0.55, metal: 0.60 },
+        silver:    { name: 'Silver Matte',      hex: '#aeb5bf', threeHex: 0xaeb5bf, rough: 0.50, metal: 0.65 }
+      },
+
+      // Dua kelompok Exploded View dari posisi laptop TERBUKA (106°):
+      // a) Kelompok Layar: tetap tegak di belakang, terpisah tipis ke arah belakang (lid paling belakang, panel di depannya)
+      // b) Kelompok Bodi: tersusun vertikal merata dari atas ke bawah, komponen dalam disebar sedikit ke samping agar tidak bertumpuk
+      components: {
+        lid_cover:     { dir: [0, 0.582, 0.813], dist: 6.12, desc: 'Penutup Layar Aluminium Matte + Logo ΛDVΛN Pojok Kanan Atas' },
+        webcam_module: { dir: [0, 0.452, 0.892], dist: 5.73, desc: '1. Mikrofon • 2. Kamera HD • 3. LED Kamera' },
+        display_bezel: { dir: [0, 0.378, 0.926], dist: 4.84, desc: 'Bingkai Bezel Hitam Tipis + Logo ΛDVΛN Bawah' },
+        display_panel: { dir: [0, 0.074, 0.997], dist: 4.05, desc: 'Layar Kaca Gelap IPS 14.0" Rasio 16:10 FHD+' },
+
+        keycaps:       { dir: [0, 1.0, 0.0],     dist: 6.20, desc: 'Keycaps Hitam (#111214) Cekung + Legend Putih Tajam' },
+        touchpad:      { dir: [0, 0.99, 0.12],   dist: 4.15, desc: 'Touchpad Sewarna Bodi (#2f4a57) Tepi Halus' },
+        hinge_left:    { dir: [-0.28, 0.96, 0],  dist: 4.00, desc: 'Engsel Torsi Presisi Sisi Kiri' },
+        hinge_right:   { dir: [0.28, 0.96, 0],   dist: 4.00, desc: 'Engsel Torsi Presisi Sisi Kanan' },
+        keyboard_deck: { dir: [0, 1.0, 0.0],     dist: 4.00, desc: 'Bodi Atas + Port HDMI, 2× Type-C 3.2, USB 3.2 & Audio' },
+
+        cpu_heatsink:  { dir: [-0.18, 0.96, -0.20], dist: 2.15, desc: 'Pipa Tembaga Ganda & 24 Sirip Radiator (#b87333)' },
+        fan:           { dir: [-0.65, 0.75, -0.12], dist: 2.65, desc: 'Kipas Sentrifugal Pendingin 16 Bilah Abu Gelap' },
+        ram_module:    { dir: [0.68, 0.72, 0.12],   dist: 2.25, desc: 'Memori 16 GB LPDDR5 PCB Hijau Tua & Pin Emas' },
+        ssd_m2:        { dir: [0.78, 0.62, 0.08],   dist: 2.85, desc: 'SSD M.2 2280 NVMe 512 GB & Konektor Emas' },
+        motherboard:   { dir: [0, -1.0, 0.0],       dist: 0.25, desc: 'Motherboard PCB Hijau Tua (#16382c) AMD Ryzen™ 5 & Konektor Emas' },
+        speaker_left:  { dir: [-0.88, -0.25, 0.15], dist: 2.40, desc: 'Modul Speaker Akustik Hitam & Membran Abu Kiri' },
+        speaker_right: { dir: [0.88, -0.25, 0.15],  dist: 2.40, desc: 'Modul Speaker Akustik Hitam & Membran Abu Kanan' },
+        battery:       { dir: [0, -0.82, 0.57],     dist: 2.25, desc: 'Baterai Abu Arang 3-Sel 50.5 Wh + Label Spesifikasi Putih' },
+
+        bottom_case:   { dir: [0, -1.0, 0.0],       dist: 4.10, desc: 'Penutup Bawah + Kisi Ventilasi & Lubang Sekrup' },
+        rubber_feet:   { dir: [0, -1.0, 0.0],       dist: 6.20, desc: 'Bantalan Kaki Karet Belakang Panjang & 2 Depan' },
+        screws:        { dir: [0, -1.0, 0.0],       dist: 8.20, desc: '10 Baut Pengunci Perak Kecil Mengilap' }
+      }
+    };
+
+    /* ===========================================================
+       2. INISIALISASI SCENE, RENDERER, ROOM ENVIRONMENT & LIGHTS
+    =========================================================== */
+    const canvas = document.getElementById('webgl-canvas');
+    let isMobile = window.innerWidth < 768;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const scene = new THREE.Scene();
+
+    const stageGroup = new THREE.Group();
+    scene.add(stageGroup);
+
+    const camera = new THREE.PerspectiveCamera(
+      36,
+      window.innerWidth / window.innerHeight,
+      0.5,
+      400
+    );
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    // 2.1 Environment Studio (RoomEnvironment) dengan environmentIntensity rendah (0.6)
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    if ('environmentIntensity' in scene) {
+      scene.environmentIntensity = 0.6;
+    }
+
+    // 2.2 Pencahayaan Studio:
+    // - 1 Key Light Softbox dari kiri atas (dengan PCFSoftShadowMap 2048)
+    const keyLight = new THREE.DirectionalLight(0xfffcf7, 1.85);
+    keyLight.position.set(-18, 28, 22);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.near = 4;
+    keyLight.shadow.camera.far = 90;
+    keyLight.shadow.camera.left = -24;
+    keyLight.shadow.camera.right = 24;
+    keyLight.shadow.camera.top = 24;
+    keyLight.shadow.camera.bottom = -24;
+    keyLight.shadow.bias = -0.0004;
+    keyLight.shadow.normalBias = 0.02;
+    scene.add(keyLight);
+
+    // - 1 Rim Light biru tipis dari belakang
+    const rimLight = new THREE.DirectionalLight(0x64a0d8, 0.85);
+    rimLight.position.set(4, 14, -26);
+    scene.add(rimLight);
+
+    // - 1 Fill Light sangat lembut dari kanan depan
+    const fillLight = new THREE.DirectionalLight(0xd8e2ef, 0.45);
+    fillLight.position.set(22, 10, 18);
+    scene.add(fillLight);
+
+    // 2.3 Contact Shadow Lembut di Lantai
+    const floorCanvas = document.createElement('canvas');
+    floorCanvas.width = 512;
+    floorCanvas.height = 512;
+    const fCtx = floorCanvas.getContext('2d');
+    const fGrad = fCtx.createRadialGradient(256, 256, 16, 256, 256, 240);
+    fGrad.addColorStop(0, 'rgba(0, 0, 0, 0.62)');
+    fGrad.addColorStop(0.55, 'rgba(8, 11, 18, 0.24)');
+    fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    fCtx.fillStyle = fGrad;
+    fCtx.fillRect(0, 0, 512, 512);
+
+    const floorTex = new THREE.CanvasTexture(floorCanvas);
+    const floorMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(44, 32),
+      new THREE.MeshBasicMaterial({ map: floorTex, transparent: true, depthWrite: false })
+    );
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.position.y = -1.25;
+    floorMesh.receiveShadow = true;
+    stageGroup.add(floorMesh);
+
+    // 2.4 Post-Processing Desktop: HDR MSAA 4x + Bloom Sangat Halus (strength 0.22, threshold 0.92)
+    let composer = null;
+    let bloomPass = null;
+
+    function setupPostProcessing() {
+      if (isMobile) {
+        composer = null;
+        return;
+      }
+      const rt = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+        type: THREE.HalfFloatType,
+        samples: 4
+      });
+      composer = new EffectComposer(renderer, rt);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.22, // strength sangat halus
+        0.35, // radius
+        0.92  // threshold tinggi agar hanya layar & highlight aktif yang berpendar halus
+      );
+      composer.addPass(bloomPass);
+
+      const outputPass = new OutputPass();
+      composer.addPass(outputPass);
+    }
+    setupPostProcessing();
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.enablePan = false;
+    controls.maxPolarAngle = Math.PI / 2 + 0.28;
+    controls.enabled = false;
+
+    /* ===========================================================
+       3. FUNGSI FITCAMERA(box, fov, aspect, margin = 1.25)
+          Menghitung jarak kamera dari Box3 SELURUH model pada kondisi
+          saat itu (tertutup, terbuka, atau exploded).
+    =========================================================== */
+    function fitCamera(box, fov, aspect, margin = 1.25) {
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      const vFovRad = THREE.MathUtils.degToRad(fov);
+      const safeAspect = Math.max(0.45, aspect);
+      const hFovRad = 2 * Math.atan(Math.tan(vFovRad * 0.5) * safeAspect);
+
+      // Ukuran efektif horizontal & vertikal model dari sudut pandang 3D miring/atas
+      const diagXZ = Math.sqrt(size.x * size.x + size.z * size.z);
+      const spanH = diagXZ * 0.92;
+      const spanV = size.y + diagXZ * 0.38;
+
+      const distV = (spanV * 0.5 * margin) / Math.tan(vFovRad * 0.5);
+      const distH = (spanH * 0.5 * margin) / Math.tan(hFovRad * 0.5);
+
+      const distance = Math.max(distV, distH) + diagXZ * 0.26;
+
+      return { distance, center, size };
+    }
+
+    // Menghitung Box3 seluruh model secara presisi pada state (lidOpenFactor, explodeFactor, rotY, rotX)
+    function computeModelBoxForState(lidOpenFactor, explodeFactor, rotY = 0, rotX = 0) {
+      if (!laptopRoot || explodedParts.length === 0) {
+        return new THREE.Box3(new THREE.Vector3(-16, -2, -11), new THREE.Vector3(16, 14, 11));
+      }
+
+      const savedRotY = laptopRoot.rotation.y;
+      const savedRotX = laptopRoot.rotation.x;
+      const savedPivotX = displayPivot ? displayPivot.rotation.x : 0;
+      const savedPositions = explodedParts.map(p => p.mesh.position.clone());
+
+      laptopRoot.rotation.set(rotX, rotY, 0);
+      if (displayPivot) {
+        const maxRad = THREE.MathUtils.degToRad(CONFIG.screenOpenAngle);
+        const dirSign = CONFIG.screenOpenAxisInvert ? -1 : 1;
+        displayPivot.rotation.x = dirSign * lidOpenFactor * maxRad;
+      }
+      for (let i = 0; i < explodedParts.length; i++) {
+        const part = explodedParts[i];
+        part.mesh.position.lerpVectors(part.assembledPos, part.explodedPos, explodeFactor);
+      }
+
+      laptopRoot.updateMatrixWorld(true);
+
+      const totalBox = new THREE.Box3();
+      Object.values(componentMeshes).forEach(mesh => {
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        totalBox.union(meshBox);
+      });
+
+      // Kembalikan state semula
+      laptopRoot.rotation.set(savedRotX, savedRotY, 0);
+      if (displayPivot) displayPivot.rotation.x = savedPivotX;
+      for (let i = 0; i < explodedParts.length; i++) {
+        explodedParts[i].mesh.position.copy(savedPositions[i]);
+      }
+      laptopRoot.updateMatrixWorld(true);
+
+      return totalBox;
+    }
+
+    // Menghitung posisi kamera untuk setiap tahap menggunakan fitCamera()
+    const stageCameraFrames = {};
+
+    function computeAllStageCameraFrames() {
+      isMobile = window.innerWidth < 768;
+      const fullW = window.innerWidth;
+      const fullH = window.innerHeight;
+
+      // Saat ada kolom teks di kiri (maks 32vw), area efektif untuk model adalah ~64% lebar layar
+      const splitAspect = isMobile ? (fullW / (fullH * 0.56)) : ((fullW * 0.64) / fullH);
+      const fullAspect = fullW / fullH;
+
+      // 1. INTRO (Laptop terbuka, teks di kolom kiri)
+      const boxIntro = computeModelBoxForState(0.95, 0.0, 0.38, 0.06);
+      const fovIntro = isMobile ? 42 : 35;
+      const fitIntro = fitCamera(boxIntro, fovIntro, splitAspect, isMobile ? 1.28 : 1.25);
+      const dirIntro = new THREE.Vector3(-0.32, 0.34, 0.88).normalize();
+      stageCameraFrames.intro = {
+        pos: fitIntro.center.clone().addScaledVector(dirIntro, fitIntro.distance),
+        target: fitIntro.center.clone(),
+        fov: fovIntro,
+        viewOffsetX: isMobile ? 0 : -fullW * 0.17,
+        viewOffsetY: isMobile ? -fullH * 0.16 : 0
+      };
+
+      // 2. MACRO (Laptop tertutup rapat 16mm, miring menampilkan bodi & port, teks di kolom kiri)
+      const boxMacro = computeModelBoxForState(0.0, 0.0, -0.48, 0.16);
+      const fovMacro = isMobile ? 38 : 30;
+      const fitMacro = fitCamera(boxMacro, fovMacro, splitAspect, isMobile ? 1.25 : 1.22);
+      const dirMacro = new THREE.Vector3(0.42, 0.30, 0.85).normalize();
+      stageCameraFrames.macro = {
+        pos: fitMacro.center.clone().addScaledVector(dirMacro, fitMacro.distance),
+        target: fitMacro.center.clone(),
+        fov: fovMacro,
+        viewOffsetX: isMobile ? 0 : -fullW * 0.17,
+        viewOffsetY: isMobile ? -fullH * 0.16 : 0
+      };
+
+      // 3. EXPLODED VIEW (Laptop terbuka di sudut buka 106°, layar tegak di belakang & bodi terpisah vertikal)
+      // Sudut pandang 32.5 derajat dari atas (three-quarter), orbit pelan 45 derajat di depan (-22.5° s.d. +22.5°)
+      const boxExplode = computeModelBoxForState(1.0, 1.0, 0, 0);
+      const fovExplode = isMobile ? 45 : 36;
+      // Margin 15% (1.18 - 1.22) memastikan seluruh susunan masuk bingkai tanpa terpotong
+      const fitExplode = fitCamera(boxExplode, fovExplode, fullAspect, isMobile ? 1.22 : 1.18);
+
+      const elevRad = THREE.MathUtils.degToRad(32.5); // 32.5 derajat (antara 30 - 35 derajat)
+      const cosElev = Math.cos(elevRad);
+      const sinElev = Math.sin(elevRad);
+      const orbitRadius = fitExplode.distance * cosElev;
+      const orbitHeight = fitExplode.distance * sinElev;
+
+      // Orbit pelan 45 derajat di sisi depan agar layar tidak pernah terlihat dari belakang
+      const angleStart = THREE.MathUtils.degToRad(-22.5);
+      const angleEnd   = THREE.MathUtils.degToRad(22.5);
+
+      stageCameraFrames.explodeStart = {
+        pos: new THREE.Vector3(
+          fitExplode.center.x + orbitRadius * Math.sin(angleStart),
+          fitExplode.center.y + orbitHeight,
+          fitExplode.center.z + orbitRadius * Math.cos(angleStart)
+        ),
+        target: fitExplode.center.clone(),
+        fov: fovExplode,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        box: boxExplode,
+        distance: fitExplode.distance,
+        center: fitExplode.center.clone()
+      };
+
+      stageCameraFrames.explodeEnd = {
+        pos: new THREE.Vector3(
+          fitExplode.center.x + orbitRadius * Math.sin(angleEnd),
+          fitExplode.center.y + orbitHeight,
+          fitExplode.center.z + orbitRadius * Math.cos(angleEnd)
+        ),
+        target: fitExplode.center.clone(),
+        fov: fovExplode,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        box: boxExplode,
+        distance: fitExplode.distance,
+        center: fitExplode.center.clone()
+      };
+
+      stageCameraFrames.explode = stageCameraFrames.explodeStart;
+
+      // 4. ACTION / FITUR (Laptop terbuka penuh 135°, teks di kolom kiri)
+      const boxAction = computeModelBoxForState(1.0, 0.0, 0.32, 0.05);
+      const fovAction = isMobile ? 42 : 35;
+      const fitAction = fitCamera(boxAction, fovAction, splitAspect, isMobile ? 1.28 : 1.25);
+      const dirAction = new THREE.Vector3(-0.28, 0.32, 0.90).normalize();
+      stageCameraFrames.action = {
+        pos: fitAction.center.clone().addScaledVector(dirAction, fitAction.distance),
+        target: fitAction.center.clone(),
+        fov: fovAction,
+        viewOffsetX: isMobile ? 0 : -fullW * 0.17,
+        viewOffsetY: isMobile ? -fullH * 0.16 : 0
+      };
+
+      // 5. STUDIO 360 PLAYGROUND (Seluruh laptop terbuka di tengah dengan margin, batasi OrbitControls minDistance & maxDistance 2x)
+      const boxPlay = computeModelBoxForState(1.0, 0.0, -0.30, 0.05);
+      const fovPlay = isMobile ? 44 : 36;
+      // Perhitungkan tinggi header studio atas & bar kontrol bawah
+      const playSafeH = Math.max(240, fullH - 180);
+      const playAspect = fullW / playSafeH;
+      const fitPlay = fitCamera(boxPlay, fovPlay, playAspect, isMobile ? 1.30 : 1.25);
+      const dirPlay = new THREE.Vector3(0.40, 0.34, 0.85).normalize();
+      stageCameraFrames.playground = {
+        pos: fitPlay.center.clone().addScaledVector(dirPlay, fitPlay.distance),
+        target: fitPlay.center.clone(),
+        fov: fovPlay,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        fitDistance: fitPlay.distance
+      };
+
+      // Set batas OrbitControls sesuai ukuran model: minDistance sesuai ukuran model, maxDistance 2x, target selalu di pusat model
+      controls.target.copy(fitPlay.center);
+      controls.minDistance = fitPlay.distance * 0.72;
+      controls.maxDistance = fitPlay.distance * 2.0;
+
+      // 6. CLOSING / SPESIFIKASI & CTA (Teks di kolom kiri, model di kanan)
+      const boxCta = computeModelBoxForState(1.0, 0.0, -0.42, 0.06);
+      const fovCta = isMobile ? 44 : 36;
+      const fitCta = fitCamera(boxCta, fovCta, splitAspect, isMobile ? 1.32 : 1.25);
+      const dirCta = new THREE.Vector3(-0.36, 0.30, 0.88).normalize();
+      stageCameraFrames.cta = {
+        pos: fitCta.center.clone().addScaledVector(dirCta, fitCta.distance),
+        target: fitCta.center.clone(),
+        fov: fovCta,
+        viewOffsetX: isMobile ? 0 : -fullW * 0.18,
+        viewOffsetY: isMobile ? fullH * 0.18 : 0
+      };
+    }
+
+    /* ===========================================================
+       4. GENERATOR TEKSTUR PROSEDURAL REALISTIS
+          - RoughnessMap & BumpMap noise halus aluminium matte
+          - Lid Cover: polos, logo ADVAN kecil di pojok kanan atas
+          - Keycaps: hitam (#111214) dengan huruf putih, roughness 0.6
+          - Palmrest: stiker AMD di kanan bawah
+    =========================================================== */
+    function drawAdvanVectorLogo(ctx, centerX, centerY, height, color = '#cfd8e3') {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = height * 0.17;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const w = height * 1.15;
+      const gap = height * 0.42;
+      const totalWidth = 5 * w + 4 * gap;
+      let x = centerX - totalWidth / 2;
+      const yTop = centerY - height / 2;
+      const yBot = centerY + height / 2;
+
+      // Huruf 'Λ'
+      ctx.beginPath();
+      ctx.moveTo(x, yBot);
+      ctx.lineTo(x + w * 0.5, yTop);
+      ctx.lineTo(x + w, yBot);
+      ctx.stroke();
+      x += w + gap;
+
+      // Huruf 'D'
+      ctx.beginPath();
+      ctx.moveTo(x, yTop);
+      ctx.lineTo(x + w * 0.55, yTop);
+      ctx.bezierCurveTo(x + w * 1.1, yTop, x + w * 1.1, yBot, x + w * 0.55, yBot);
+      ctx.lineTo(x, yBot);
+      ctx.closePath();
+      ctx.stroke();
+      x += w + gap;
+
+      // Huruf 'V'
+      ctx.beginPath();
+      ctx.moveTo(x, yTop);
+      ctx.lineTo(x + w * 0.5, yBot);
+      ctx.lineTo(x + w, yTop);
+      ctx.stroke();
+      x += w + gap;
+
+      // Huruf 'Λ'
+      ctx.beginPath();
+      ctx.moveTo(x, yBot);
+      ctx.lineTo(x + w * 0.5, yTop);
+      ctx.lineTo(x + w, yBot);
+      ctx.stroke();
+      x += w + gap;
+
+      // Huruf 'N'
+      ctx.beginPath();
+      ctx.moveTo(x, yBot);
+      ctx.lineTo(x, yTop);
+      ctx.lineTo(x + w, yBot);
+      ctx.lineTo(x + w, yTop);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // 4.1 Procedural RoughnessMap & BumpMap (Butiran Matte Halus Aluminium)
+    function createMatteAluminumMaps() {
+      const size = 512;
+      const roughCanvas = document.createElement('canvas');
+      roughCanvas.width = size;
+      roughCanvas.height = size;
+      const rCtx = roughCanvas.getContext('2d');
+      const rImg = rCtx.createImageData(size, size);
+
+      const bumpCanvas = document.createElement('canvas');
+      bumpCanvas.width = size;
+      bumpCanvas.height = size;
+      const bCtx = bumpCanvas.getContext('2d');
+      const bImg = bCtx.createImageData(size, size);
+
+      for (let i = 0; i < rImg.data.length; i += 4) {
+        const n = (Math.random() - 0.5) * 26;
+        // Roughness map centered around ~215 (dikalikan scalar roughness 0.55)
+        const rv = Math.max(180, Math.min(250, 220 + n));
+        rImg.data[i] = rv;
+        rImg.data[i + 1] = rv;
+        rImg.data[i + 2] = rv;
+        rImg.data[i + 3] = 255;
+
+        // Bump map micro-grain
+        const bv = Math.max(100, Math.min(156, 128 + n));
+        bImg.data[i] = bv;
+        bImg.data[i + 1] = bv;
+        bImg.data[i + 2] = bv;
+        bImg.data[i + 3] = 255;
+      }
+      rCtx.putImageData(rImg, 0, 0);
+      bCtx.putImageData(bImg, 0, 0);
+
+      const roughMap = new THREE.CanvasTexture(roughCanvas);
+      roughMap.wrapS = THREE.RepeatWrapping;
+      roughMap.wrapT = THREE.RepeatWrapping;
+      roughMap.repeat.set(7, 7);
+
+      const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+      bumpMap.wrapS = THREE.RepeatWrapping;
+      bumpMap.wrapT = THREE.RepeatWrapping;
+      bumpMap.repeat.set(7, 7);
+
+      return { roughMap, bumpMap };
+    }
+    const { roughMap: aluminumRoughnessMap, bumpMap: anodizedBumpMap } = createMatteAluminumMaps();
+
+    // 4.2 Tekstur KEYCAPS Hitam (#111214) dengan Huruf Putih Tajam, Roughness 0.6
+    function createPhotorealKeycapsTexture() {
+      const cw = 2048;
+      const ch = 700;
+      const c = document.createElement('canvas');
+      c.width = cw;
+      c.height = ch;
+      const ctx = c.getContext('2d');
+
+      // Warna dasar keycaps hitam matte (#111214)
+      ctx.fillStyle = '#111214';
+      ctx.fillRect(0, 0, cw, ch);
+
+      const totalW = 27.6;
+      const totalD = 9.4;
+
+      function toPxX(xCm) { return ((xCm + totalW / 2) / totalW) * cw; }
+      function toPxY(zCm) { return ((zCm + totalD / 2) / totalD) * ch; }
+      function toPxW(wCm) { return (wCm / totalW) * cw; }
+      function toPxH(dCm) { return (dCm / totalD) * ch; }
+
+      function drawKeyCap(xCm, zCm, wCm, dCm, mainLabel, subLabel = '', align = 'center', isPower = false) {
+        const cx = toPxX(xCm);
+        const cy = toPxY(zCm);
+        const kw = toPxW(wCm) * 0.88;
+        const kh = toPxH(dCm) * 0.86;
+        const x0 = cx - kw / 2;
+        const y0 = cy - kh / 2;
+
+        ctx.fillStyle = '#111214';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(x0, y0, kw, kh, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f3f4f6';
+        ctx.textBaseline = 'middle';
+
+        if (isPower) {
+          ctx.strokeStyle = '#f3f4f6';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(cx, cy + 1, 8.5, -Math.PI * 0.3, Math.PI * 1.3, false);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - 9.5);
+          ctx.lineTo(cx, cy - 1);
+          ctx.stroke();
+          return;
+        }
+
+        if (subLabel) {
+          ctx.font = '600 12.5px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#d1d5db';
+          ctx.fillText(subLabel, cx, cy - kh * 0.22);
+
+          ctx.font = '700 16.5px Inter, sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(mainLabel, cx, cy + kh * 0.18);
+        } else if (align === 'left') {
+          ctx.font = '600 13.5px Inter, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(mainLabel, x0 + 13, cy);
+        } else if (align === 'right') {
+          ctx.font = '600 13.5px Inter, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText(mainLabel, x0 + kw - 13, cy);
+        } else {
+          const isSingleLetter = mainLabel.length === 1;
+          ctx.font = isSingleLetter ? '600 19.5px Inter, sans-serif' : '600 12.5px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(mainLabel, cx, cy + 1);
+        }
+      }
+
+      const r0Labels = ['Esc', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'PrtSc', 'Delete', 'PWR'];
+      for (let i = 0; i < 16; i++) {
+        const x = -13.0 + i * 1.733;
+        drawKeyCap(x, -4.15, 1.48, 0.82, r0Labels[i], '', 'center', i === 15);
+      }
+
+      const r1Main = ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='];
+      const r1Sub  = ['~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+'];
+      for (let i = 0; i < 13; i++) {
+        const x = -12.95 + i * 1.88;
+        drawKeyCap(x, -2.75, 1.60, 1.34, r1Main[i], r1Sub[i]);
+      }
+      drawKeyCap(12.35, -2.75, 2.76, 1.34, 'Backspace', '', 'right');
+
+      drawKeyCap(-12.55, -1.12, 2.42, 1.34, 'Tab', '', 'left');
+      const r2Keys = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'];
+      for (let i = 0; i < 12; i++) {
+        const x = -10.35 + i * 1.88;
+        drawKeyCap(x, -1.12, 1.60, 1.34, r2Keys[i], i === 10 ? '{' : i === 11 ? '}' : '');
+      }
+      drawKeyCap(12.68, -1.12, 2.12, 1.34, '\\', '|');
+
+      drawKeyCap(-12.32, 0.51, 2.86, 1.34, 'Caps Lock', '', 'left');
+      const r3Keys = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"];
+      for (let i = 0; i < 11; i++) {
+        const x = -9.9 + i * 1.88;
+        drawKeyCap(x, 0.51, 1.60, 1.34, r3Keys[i], i === 9 ? ':' : i === 10 ? '"' : '');
+      }
+      drawKeyCap(11.95, 0.51, 3.56, 1.34, 'Enter', '', 'right');
+
+      drawKeyCap(-11.87, 2.14, 3.76, 1.34, 'Shift', '', 'left');
+      const r4Keys = ['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'];
+      const r4Sub  = ['', '', '', '', '', '', '', '<', '>', '?'];
+      for (let i = 0; i < 10; i++) {
+        const x = -8.98 + i * 1.88;
+        drawKeyCap(x, 2.14, 1.60, 1.34, r4Keys[i], r4Sub[i]);
+      }
+      drawKeyCap(11.48, 2.14, 4.50, 1.34, 'Shift', '', 'right');
+
+      drawKeyCap(-12.72, 3.82, 2.06, 1.44, 'Ctrl', '', 'left');
+      drawKeyCap(-10.55, 3.82, 1.66, 1.44, 'Fn');
+      drawKeyCap(-8.58, 3.82, 1.66, 1.44, '❖');
+      drawKeyCap(-6.60, 3.82, 1.66, 1.44, 'Alt');
+      drawKeyCap(-0.82, 3.82, 9.22, 1.44, '');
+      drawKeyCap(4.95, 3.82, 1.66, 1.44, 'Alt');
+      drawKeyCap(6.92, 3.82, 1.66, 1.44, 'Ctrl');
+      drawKeyCap(8.92, 3.82, 1.64, 1.44, '◄');
+      drawKeyCap(10.88, 3.82 - 0.39, 1.64, 0.66, '▲');
+      drawKeyCap(10.88, 3.82 + 0.39, 1.64, 0.66, '▼');
+      drawKeyCap(12.84, 3.82, 1.64, 1.44, '►');
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      return tex;
+    }
+
+    // 4.3 Tekstur KEYBOARD DECK (#2f4a57 Matte Teal + Cekungan Keyboard Hitam + Stiker AMD di Kanan Bawah Palm Rest)
+    function createKeyboardDeckTexture(hexColor = '#2f4a57') {
+      const cw = 2048;
+      const ch = 1430;
+      const c = document.createElement('canvas');
+      c.width = cw;
+      c.height = ch;
+      const ctx = c.getContext('2d');
+
+      const W = 31.2, D = 21.8;
+      const toX = (x) => ((x + W / 2) / W) * cw;
+      const toY = (z) => ((z + D / 2) / D) * ch;
+      const toW = (w) => (w / W) * cw;
+      const toH = (d) => (d / D) * ch;
+
+      // Warna bodi matte merata tanpa gradien biru-putih mengilap
+      ctx.fillStyle = hexColor;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Butiran halus matte
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.025)';
+      for (let i = 0; i < 5000; i++) {
+        ctx.fillRect(Math.random() * cw, Math.random() * ch, 2, 2);
+      }
+
+      // Cekungan Keyboard Well Hitam (#0c0d10)
+      ctx.fillStyle = '#0c0d10';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(toX(-13.95), toY(-9.25), toW(27.9), toH(9.35), 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // Garis tepi halus di sekeliling Touchpad (tanpa gradien biru terang)
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.32)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(toX(-5.88), toY(1.82), toW(11.76), toH(7.42), 16);
+      ctx.stroke();
+
+      // Stiker AMD Radeon & AMD Ryzen di Kanan Bawah Palm Rest
+      const s1x = toX(9.55);
+      const s1y = toY(8.15);
+      const sw = toW(1.85);
+      const sh = toH(1.52);
+
+      ctx.save();
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.roundRect(s1x, s1y, sw, sh, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#b91c1c';
+      ctx.fillRect(s1x + 2, s1y + 2, sw - 4, sh * 0.50);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 12px Inter, sans-serif';
+      ctx.fillText('AMD', s1x + 9, s1y + 19);
+      ctx.font = '700 12px Inter, sans-serif';
+      ctx.fillText('RADEON', s1x + 9, s1y + 36);
+      ctx.fillStyle = '#d1d5db';
+      ctx.font = '600 9.5px Inter, sans-serif';
+      ctx.fillText('GRAPHICS', s1x + 9, s1y + sh - 13);
+      ctx.restore();
+
+      const s2x = toX(11.80);
+      const s2y = toY(8.15);
+      const sw2 = toW(2.02);
+
+      ctx.save();
+      ctx.fillStyle = '#334155';
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(s2x, s2y, sw2, sh, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(s2x + 2, s2y + sh * 0.62, sw2 - 4, sh * 0.14);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 11px Inter, sans-serif';
+      ctx.fillText('AMD', s2x + 9, s2y + 19);
+      ctx.font = '800 14px Inter, sans-serif';
+      ctx.fillText('RYZEN', s2x + 9, s2y + 38);
+      ctx.fillStyle = '#f97316';
+      ctx.font = '800 17px Inter, sans-serif';
+      ctx.fillText('5', s2x + sw2 - 21, s2y + sh - 8);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '600 8.5px Inter, sans-serif';
+      ctx.fillText('SERIES', s2x + 9, s2y + sh - 9);
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      return tex;
+    }
+
+    // 4.4 Tekstur LID COVER: Polos Matte Teal (#2f4a57), Logo ADVAN Kecil di Pojok Kanan Atas
+    function createLidCoverTexture(hexColor = '#2f4a57') {
+      const cw = 2048;
+      const ch = 1430;
+      const c = document.createElement('canvas');
+      c.width = cw;
+      c.height = ch;
+      const ctx = c.getContext('2d');
+
+      // Permukaan polos matte tanpa gradien mengilap
+      ctx.fillStyle = hexColor;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Logo ADVAN kecil di pojok/sisi kanan atas lid (x: 82%, y: 28%)
+      drawAdvanVectorLogo(ctx, cw * 0.82, ch * 0.28, 28, 'rgba(14, 20, 26, 0.78)');
+      drawAdvanVectorLogo(ctx, cw * 0.82 - 1, ch * 0.28 - 1, 28, 'rgba(255, 255, 255, 0.14)');
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      return tex;
+    }
+
+    // 4.5 Tekstur DISPLAY BEZEL Hitam (#111214)
+    function createBezelTexture() {
+      const cw = 2048;
+      const ch = 1430;
+      const c = document.createElement('canvas');
+      c.width = cw;
+      c.height = ch;
+      const ctx = c.getContext('2d');
+
+      ctx.fillStyle = '#111214';
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Lensa Kamera di Bezel Atas
+      ctx.fillStyle = '#050608';
+      ctx.beginPath(); ctx.arc(cw * 0.5, 28, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#27272a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Logo ADVAN Kecil di Dagu Bawah Bezel
+      drawAdvanVectorLogo(ctx, cw * 0.5, ch - 42, 20, '#71717a');
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = true;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      return tex;
+    }
+
+    // 4.6 Tekstur Komponen Dalam (Motherboard #16382c, Baterai Abu Arang + Label Putih, RAM & SSD Hijau Tua + Emas, Speaker Membran Abu)
+    function createMotherboardTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      // PCB Hijau Tua (#16382c)
+      ctx.fillStyle = '#16382c';
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Jalur sirkuit tembaga halus
+      ctx.strokeStyle = 'rgba(215, 140, 60, 0.35)';
+      ctx.lineWidth = 1.8;
+      for (let i = 0; i < 65; i++) {
+        const x = (i * 17) % 1024;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 36, 256);
+        ctx.lineTo(x, 512);
+        ctx.stroke();
+      }
+
+      // Chip IC Hitam di Motherboard
+      ctx.fillStyle = '#111316';
+      ctx.fillRect(440, 160, 150, 150);
+      ctx.fillRect(680, 280, 95, 95);
+      ctx.fillRect(220, 260, 85, 85);
+
+      // Pin & Konektor Emas (#e0b840) di tepi papan sirkuit
+      ctx.fillStyle = '#e0b840';
+      for (let i = 0; i < 48; i++) {
+        ctx.fillRect(120 + i * 16, 12, 8, 22);
+        ctx.fillRect(180 + i * 14, 478, 7, 22);
+      }
+      for (let i = 0; i < 18; i++) {
+        ctx.fillRect(10, 80 + i * 20, 24, 10);
+        ctx.fillRect(990, 90 + i * 20, 24, 10);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBatteryTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      // Baterai Abu Arang (#1f2227)
+      ctx.fillStyle = '#1f2227';
+      ctx.fillRect(0, 0, 1024, 512);
+
+      // Plat Label Baterai dengan border putih tegas
+      ctx.fillStyle = '#262a33';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(48, 56, 928, 396);
+      ctx.strokeRect(48, 56, 928, 396);
+
+      // Konektor Emas Baterai di sisi atas
+      ctx.fillStyle = '#e0b840';
+      for (let i = 0; i < 8; i++) {
+        ctx.fillRect(460 + i * 14, 8, 8, 28);
+      }
+
+      // Label Spesifikasi Putih Bersih
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 22px Inter, sans-serif';
+      ctx.fillText('ΛDVΛN RECHARGEABLE LI-ION POLYMER BATTERY PACK', 84, 130);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '500 17px JetBrains Mono, monospace';
+      ctx.fillText('MODEL: WP-AIR-505   |   RATED CAPACITY: 50.5 Wh (4400 mAh)   |   11.55V', 84, 178);
+      ctx.fillText('WARNING: DO NOT DISASSEMBLE, CRUSH, PUNCTURE, OR INCINERATE.', 84, 222);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(84, 270, 160, 56);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('CE   RoHS   Li-ion', 100, 305);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createRamTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      // PCB Hijau Tua (#16382c)
+      ctx.fillStyle = '#16382c';
+      ctx.fillRect(0, 0, 512, 256);
+      // 8 Chip DRAM Hitam
+      ctx.fillStyle = '#111316';
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(48 + i * 108, 36, 84, 72);
+        ctx.fillRect(48 + i * 108, 132, 84, 72);
+      }
+      // Pin Konektor Emas SO-DIMM (#e0b840)
+      ctx.fillStyle = '#e0b840';
+      for (let i = 0; i < 44; i++) {
+        ctx.fillRect(16 + i * 11, 228, 6, 26);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createSsdTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      // PCB Hijau Tua (#16382c)
+      ctx.fillStyle = '#16382c';
+      ctx.fillRect(0, 0, 256, 512);
+      // NAND Flash & Controller Hitam
+      ctx.fillStyle = '#111316';
+      ctx.fillRect(36, 60, 184, 110);
+      ctx.fillRect(36, 200, 184, 120);
+      ctx.fillRect(36, 340, 184, 110);
+      // Pin Konektor Emas M.2 NVMe (#e0b840)
+      ctx.fillStyle = '#e0b840';
+      for (let i = 0; i < 18; i++) {
+        ctx.fillRect(32 + i * 11, 6, 6, 30);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createSpeakerTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      // Casing Hitam (#111215)
+      ctx.fillStyle = '#111215';
+      ctx.fillRect(0, 0, 256, 128);
+      // Membran Abu (#5a6270)
+      ctx.fillStyle = '#5a6270';
+      ctx.beginPath();
+      ctx.ellipse(128, 64, 86, 42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Ring membran abu terang
+      ctx.strokeStyle = '#8a94a6';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // Dust cap tengah
+      ctx.fillStyle = '#1c1f26';
+      ctx.beginPath();
+      ctx.ellipse(128, 64, 28, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const tex = new THREE.CanvasTexture(c);
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    /* ===========================================================
+       5. TEKSTUR LAYAR KACA GELAP DENGAN PANTULAN SAMAR
+    =========================================================== */
+    const screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 1600;
+    screenCanvas.height = 1000;
+    const sCtx = screenCanvas.getContext('2d');
+    const screenTexture = new THREE.CanvasTexture(screenCanvas);
+    screenTexture.colorSpace = THREE.SRGBColorSpace;
+    screenTexture.anisotropy = maxAnisotropy;
+
+    let currentOSMode = 0;
+    const osModeLabels = ['Layar: Windows 11 AI', 'Layar: Creator 4K', 'Layar: Ryzen™ Telemetry'];
+
+    function drawScreenWindows11(timeSec) {
+      const W = 1600, H = 1000;
+
+      const bgGrad = sCtx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, '#0d1017');
+      bgGrad.addColorStop(0.75, '#121722');
+      bgGrad.addColorStop(1, '#172e6e');
+      sCtx.fillStyle = bgGrad;
+      sCtx.fillRect(0, 0, W, H);
+
+      // Jendela Aplikasi Dark Mode
+      sCtx.fillStyle = '#16171b';
+      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+      sCtx.lineWidth = 2;
+      sCtx.beginPath();
+      sCtx.roundRect(24, 16, W - 48, H - 86, 14);
+      sCtx.fill();
+      sCtx.stroke();
+
+      sCtx.fillStyle = '#0e0f13';
+      sCtx.beginPath();
+      sCtx.roundRect(24, 16, W - 48, 44, [14, 14, 0, 0]);
+      sCtx.fill();
+
+      const tabs = ['● WhatsApp', '▶ YouTube', '◆ Advan Workplus Air 3D', '⚡ Ryzen™ AI Studio', '+'];
+      for (let i = 0; i < tabs.length; i++) {
+        const tx = 48 + i * 215;
+        sCtx.fillStyle = i === 2 ? '#232429' : '#15161a';
+        sCtx.beginPath();
+        sCtx.roundRect(tx, 24, i === 4 ? 36 : 200, 34, [8, 8, 0, 0]);
+        sCtx.fill();
+        sCtx.fillStyle = i === 2 ? '#e5e7eb' : '#9ca3af';
+        sCtx.font = '600 13px Inter, sans-serif';
+        sCtx.fillText(tabs[i], tx + 14, 45);
+      }
+
+      sCtx.fillStyle = '#1e2026';
+      sCtx.fillRect(24, 60, W - 48, 42);
+      sCtx.fillStyle = '#121317';
+      sCtx.beginPath();
+      sCtx.roundRect(140, 67, W - 320, 28, 14);
+      sCtx.fill();
+      sCtx.fillStyle = '#9ca3af';
+      sCtx.font = '400 13px Inter, sans-serif';
+      sCtx.fillText('🔒  advan.id/workplus-air-ryzen-edition', 162, 85);
+
+      sCtx.fillStyle = '#121317';
+      sCtx.fillRect(25, 102, 290, H - 173);
+
+      sCtx.fillStyle = '#e5e7eb';
+      sCtx.font = '700 18px Inter, sans-serif';
+      sCtx.fillText('ΛDVΛN Studio', 52, 142);
+
+      const sideItems = [
+        '✦ Proyek Baru',
+        '▣ Arsitektur 3D GLTF',
+        '◈ Render Sinematik 16:10',
+        '⚡ Performa Ryzen™ 5 6600H',
+        '🔋 Manajemen Daya 50.5Wh',
+        '❄ Kontrol Kipas Sentrifugal',
+        '⚙ Pengaturan Sistem'
+      ];
+      for (let i = 0; i < sideItems.length; i++) {
+        const sy = 185 + i * 44;
+        if (i === 1) {
+          sCtx.fillStyle = 'rgba(124, 196, 255, 0.12)';
+          sCtx.beginPath(); sCtx.roundRect(40, sy - 22, 260, 34, 8); sCtx.fill();
+        }
+        sCtx.fillStyle = i === 1 ? '#7cc4ff' : '#9ca3af';
+        sCtx.font = i === 1 ? '600 14px Inter, sans-serif' : '400 14px Inter, sans-serif';
+        sCtx.fillText(sideItems[i], 54, sy);
+      }
+
+      if (currentOSMode === 0) {
+        sCtx.fillStyle = '#e5e7eb';
+        sCtx.font = '700 23px Inter, sans-serif';
+        sCtx.fillText('Advan Workplus Air — Produktivitas Tanpa Batas', 368, 162);
+
+        sCtx.fillStyle = '#23252c';
+        sCtx.beginPath(); sCtx.roundRect(680, 195, 620, 64, 14); sCtx.fill();
+        sCtx.fillStyle = '#d1d5db';
+        sCtx.font = '500 14.5px Inter, sans-serif';
+        sCtx.fillText('Tampilkan analisis efisiensi baterai 50.5 Wh dan performa multi-core Ryzen 5.', 704, 233);
+
+        const bars = [0.68, 0.85, 0.74, 0.94, 0.82, 0.90, 0.88];
+        const barLabels = ['Coding', 'Render 3D', 'Office', 'AI Task', 'Browser', 'Video 4K', 'Gaming'];
+        for (let i = 0; i < 7; i++) {
+          const bx = 380 + i * 125;
+          const wave = 0.90 + Math.sin(timeSec * 2.2 + i * 0.8) * 0.10;
+          const bh = 230 * bars[i] * wave;
+          const by = 640 - bh;
+
+          const g = sCtx.createLinearGradient(0, by, 0, 640);
+          g.addColorStop(0, '#58a6ff');
+          g.addColorStop(1, 'rgba(88, 166, 255, 0.12)');
+          sCtx.fillStyle = g;
+          sCtx.beginPath(); sCtx.roundRect(bx, by, 64, bh, [8, 8, 2, 2]); sCtx.fill();
+
+          sCtx.fillStyle = '#9ca3af';
+          sCtx.font = '600 12.5px Inter, sans-serif';
+          sCtx.fillText(barLabels[i], bx + 6, 668);
+        }
+
+        sCtx.fillStyle = '#1e2028';
+        sCtx.beginPath(); sCtx.roundRect(368, 720, 960, 82, 16); sCtx.fill();
+        sCtx.fillStyle = '#9ca3af';
+        sCtx.font = '400 14.5px Inter, sans-serif';
+        sCtx.fillText('+  Ketik perintah atau analisis proyek Anda di Advan Workplus Air...', 396, 766);
+      } else if (currentOSMode === 1) {
+        sCtx.fillStyle = '#e5e7eb';
+        sCtx.font = '700 23px Inter, sans-serif';
+        sCtx.fillText('Timeline Video 4K & Audio Mastering • 100% sRGB', 368, 162);
+        for (let i = 0; i < 42; i++) {
+          const wx = 380 + i * 26;
+          const wh = 40 + Math.abs(Math.sin(timeSec * 3.0 + i * 0.4)) * 210;
+          sCtx.fillStyle = i % 2 === 0 ? '#58a6ff' : '#818cf8';
+          sCtx.beginPath(); sCtx.roundRect(wx, 380 - wh / 2, 13, wh, 5); sCtx.fill();
+        }
+      } else {
+        sCtx.fillStyle = '#e5e7eb';
+        sCtx.font = '700 23px Inter, sans-serif';
+        sCtx.fillText('AMD Ryzen™ 5 & Radeon™ Graphics Real-Time Monitor', 368, 162);
+        for (let i = 0; i < 6; i++) {
+          const ry = 220 + i * 76;
+          const ld = 0.65 + Math.sin(timeSec * 2.6 + i) * 0.22;
+          sCtx.fillStyle = '#d1d5db';
+          sCtx.font = '600 15px JetBrains Mono, monospace';
+          sCtx.fillText(`CORE 0${i + 1}`, 380, ry + 25);
+          sCtx.fillStyle = '#25272e';
+          sCtx.beginPath(); sCtx.roundRect(500, ry, 700, 34, 8); sCtx.fill();
+          sCtx.fillStyle = '#ea580c';
+          sCtx.beginPath(); sCtx.roundRect(500, ry, 700 * ld, 34, 8); sCtx.fill();
+          sCtx.fillStyle = '#e5e7eb';
+          sCtx.fillText(`${(3.7 + ld * 0.8).toFixed(2)} GHz`, 1230, ry + 25);
+        }
+      }
+
+      // Windows 11 Taskbar
+      sCtx.fillStyle = 'rgba(13, 17, 26, 0.90)';
+      sCtx.fillRect(0, H - 54, W, 54);
+      const tbCenter = W * 0.38;
+      sCtx.fillStyle = '#38bdf8';
+      sCtx.fillRect(tbCenter, H - 39, 10, 10);
+      sCtx.fillRect(tbCenter + 12, H - 39, 10, 10);
+      sCtx.fillRect(tbCenter, H - 27, 10, 10);
+      sCtx.fillRect(tbCenter + 12, H - 27, 10, 10);
+
+      sCtx.fillStyle = '#cbd5e1';
+      sCtx.font = '500 12px Inter, sans-serif';
+      sCtx.fillText('ENG   🔊   📶   🔋 98%     10:28', W - 240, H - 24);
+
+      screenTexture.needsUpdate = true;
+    }
+    drawScreenWindows11(0);
+
+    /* ===========================================================
+       6. PARTIKEL BULAT LEMBUT (RADIAL GRADIENT SPRITE, -40% JUMLAH,
+          HANYA MUNCUL DI TAHAP FITUR) & GARIS PUTUS TIPIS EXPLODED
+    =========================================================== */
+    function createSoftCircleSpriteTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(165, 216, 255, 0.95)');
+      grad.addColorStop(0.45, 'rgba(124, 196, 255, 0.45)');
+      grad.addColorStop(1, 'rgba(124, 196, 255, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // Jumlah dikurangi 40% dari sebelumnya (240 -> 144 di desktop, 100 -> 60 di mobile)
+    const airflowCount = isMobile ? 60 : 144;
+    const airflowGeom = new THREE.BufferGeometry();
+    const airflowPos = new Float32Array(airflowCount * 3);
+    const airflowVel = [];
+
+    for (let i = 0; i < airflowCount; i++) {
+      airflowPos[i * 3]     = -7.5 + (Math.random() - 0.5) * 6.5;
+      airflowPos[i * 3 + 1] = 0.75 + (Math.random() - 0.5) * 0.7;
+      airflowPos[i * 3 + 2] = -5.5 - Math.random() * 5.5;
+      airflowVel.push({
+        vx: (Math.random() - 0.5) * 0.03,
+        vy: (Math.random() - 0.3) * 0.015,
+        vz: -0.15 - Math.random() * 0.20
+      });
+    }
+    airflowGeom.setAttribute('position', new THREE.BufferAttribute(airflowPos, 3));
+    const airflowMat = new THREE.PointsMaterial({
+      color: 0x9cd4ff,
+      map: createSoftCircleSpriteTexture(),
+      size: isMobile ? 0.55 : 0.75,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const airflowParticles = new THREE.Points(airflowGeom, airflowMat);
+    stageGroup.add(airflowParticles);
+
+    // Garis vertikal tipis (opacity 0.25) di tengah antar lapisan pada Exploded View
+    let centerVerticalLine = null;
+    let centerLineGeom = null;
+    let centerLineMat = null;
+
+    /* ===========================================================
+       7. PEMUATAN GLB & PENERAPAN MATERIAL FISIK REALISTIS
+          - MeshPhysicalMaterial
+          - Bodi Teal Gelap Matte (#2f4a57), roughness 0.55, metalness 0.60
+          - Keycaps Hitam (#111214), roughness 0.60
+          - Touchpad sewarna bodi, tanpa gradien biru terang
+          - EdgesGeometry highlight tepi tipis (opacity 0.15)
+    =========================================================== */
+    const componentMeshes = {};
+    const explodedParts = [];
+    let displayPivot = null;
+    let laptopRoot = null;
+    let displayPanelMesh = null;
+    let keycapsMesh = null;
+
+    function convertBlenderDirToThree(v) {
+      if (!v || v.length < 3) return new THREE.Vector3(0, 1, 0);
+      const vec = new THREE.Vector3(v[0], v[2], -v[1]);
+      return vec.length() > 0.001 ? vec.normalize() : new THREE.Vector3(0, 1, 0);
+    }
+
+    function applyBodyFinish(colorKey) {
+      const cData = CONFIG.colors[colorKey] || CONFIG.colors.slateBlue;
+      const lidTex = createLidCoverTexture(cData.hex);
+      const deckTex = createKeyboardDeckTexture(cData.hex);
+
+      if (componentMeshes['lid_cover']) {
+        const mesh = componentMeshes['lid_cover'];
+        const m = mesh.material;
+        m.map = lidTex;
+        m.color.setHex(0xffffff);
+        m.roughness = cData.rough;
+        m.metalness = cData.metal;
+        m.roughnessMap = aluminumRoughnessMap;
+        m.bumpMap = anodizedBumpMap;
+        m.bumpScale = 0.0028;
+        m.clearcoat = 0.03;
+        m.sheen = 0.04;
+        m.envMapIntensity = 0.6;
+        m.needsUpdate = true;
+        if (mesh.userData.origColor) mesh.userData.origColor.setHex(0xffffff);
+        if (mesh.userData.targetColor) mesh.userData.targetColor.setHex(0xffffff);
+      }
+      if (componentMeshes['keyboard_deck']) {
+        const mesh = componentMeshes['keyboard_deck'];
+        const m = mesh.material;
+        m.map = deckTex;
+        m.color.setHex(0xffffff);
+        m.roughness = cData.rough;
+        m.metalness = cData.metal;
+        m.roughnessMap = aluminumRoughnessMap;
+        m.bumpMap = anodizedBumpMap;
+        m.bumpScale = 0.0028;
+        m.clearcoat = 0.03;
+        m.sheen = 0.04;
+        m.envMapIntensity = 0.6;
+        m.needsUpdate = true;
+        if (mesh.userData.origColor) mesh.userData.origColor.setHex(0xffffff);
+        if (mesh.userData.targetColor) mesh.userData.targetColor.setHex(0xffffff);
+      }
+      if (componentMeshes['bottom_case']) {
+        const mesh = componentMeshes['bottom_case'];
+        const m = mesh.material;
+        m.color.setHex(cData.threeHex);
+        m.roughness = cData.rough;
+        m.metalness = cData.metal;
+        m.roughnessMap = aluminumRoughnessMap;
+        m.bumpMap = anodizedBumpMap;
+        m.bumpScale = 0.0028;
+        m.clearcoat = 0.02;
+        m.sheen = 0.04;
+        m.envMapIntensity = 0.6;
+        m.needsUpdate = true;
+        if (mesh.userData.origColor) mesh.userData.origColor.setHex(cData.threeHex);
+        if (mesh.userData.targetColor) mesh.userData.targetColor.setHex(cData.threeHex);
+      }
+      if (componentMeshes['touchpad']) {
+        // Touchpad sewarna bodi, tepi halus, tanpa gradien biru terang
+        const mesh = componentMeshes['touchpad'];
+        const m = mesh.material;
+        m.color.setHex(cData.threeHex);
+        m.roughness = 0.52;
+        m.metalness = 0.55;
+        m.roughnessMap = aluminumRoughnessMap;
+        m.bumpMap = anodizedBumpMap;
+        m.bumpScale = 0.0012;
+        m.clearcoat = 0.05;
+        m.sheen = 0.0;
+        m.envMapIntensity = 0.55;
+        m.needsUpdate = true;
+        if (mesh.userData.origColor) mesh.userData.origColor.setHex(cData.threeHex);
+        if (mesh.userData.targetColor) mesh.userData.targetColor.setHex(cData.threeHex);
+      }
+    }
+
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      CONFIG.modelPath,
+      (gltf) => {
+        const model = gltf.scene;
+        laptopRoot = model;
+
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        stageGroup.add(model);
+
+        const lineVertices = [];
+
+        const keycapsTex = createPhotorealKeycapsTexture();
+        const bezelTex = createBezelTexture();
+        const moboTex = createMotherboardTexture();
+        const batTex = createBatteryTexture();
+        const ramTex = createRamTexture();
+        const ssdTex = createSsdTexture();
+        const speakerTex = createSpeakerTexture();
+
+        const edgeLineMat = new THREE.LineBasicMaterial({
+          color: 0x5c7282,
+          transparent: true,
+          opacity: 0.07,
+          depthWrite: false
+        });
+
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            componentMeshes[child.name] = child;
+
+            const oldMat = child.material;
+            const physMat = new THREE.MeshPhysicalMaterial({
+              name: oldMat.name,
+              color: oldMat.color,
+              emissive: new THREE.Color(0x000000),
+              emissiveIntensity: 0.0,
+              metalness: 0.5,
+              roughness: 0.55,
+              clearcoat: 0.02,
+              clearcoatRoughness: 0.4,
+              envMapIntensity: 0.6
+            });
+
+            if (['lid_cover', 'keyboard_deck', 'bottom_case'].includes(child.name)) {
+              physMat.color.setHex(0x2f4a57);
+              physMat.roughness = 0.55;
+              physMat.metalness = 0.60;
+              physMat.roughnessMap = aluminumRoughnessMap;
+              physMat.bumpMap = anodizedBumpMap;
+              physMat.bumpScale = 0.0028;
+            } else if (child.name === 'touchpad') {
+              physMat.color.setHex(0x2f4a57);
+              physMat.roughness = 0.52;
+              physMat.metalness = 0.55;
+              physMat.roughnessMap = aluminumRoughnessMap;
+            } else if (child.name === 'keycaps') {
+              physMat.map = keycapsTex;
+              physMat.color.setHex(0xffffff);
+              physMat.roughness = 0.60;
+              physMat.metalness = 0.05;
+              physMat.clearcoat = 0.02;
+              keycapsMesh = child;
+            } else if (child.name === 'display_bezel') {
+              physMat.map = bezelTex;
+              physMat.color.setHex(0xffffff);
+              physMat.roughness = 0.65;
+              physMat.metalness = 0.05;
+              physMat.clearcoat = 0.02;
+            } else if (child.name === 'display_panel') {
+              // Layar kaca gelap dengan pantulan samar
+              physMat.map = screenTexture;
+              physMat.emissiveMap = screenTexture;
+              physMat.emissive = new THREE.Color(0xffffff);
+              physMat.emissiveIntensity = 0.62;
+              physMat.roughness = 0.12;
+              physMat.metalness = 0.04;
+              physMat.clearcoat = 0.45;
+              physMat.clearcoatRoughness = 0.08;
+              physMat.envMapIntensity = 0.45;
+              displayPanelMesh = child;
+            } else if (child.name === 'motherboard') {
+              // Motherboard: hijau tua (#16382c) + Konektor Emas
+              physMat.map = moboTex;
+              physMat.color.setHex(0xffffff);
+              physMat.roughness = 0.45;
+              physMat.metalness = 0.20;
+            } else if (child.name === 'battery') {
+              // Baterai: abu arang dengan label putih
+              physMat.map = batTex;
+              physMat.color.setHex(0xffffff);
+              physMat.roughness = 0.52;
+              physMat.metalness = 0.10;
+            } else if (child.name === 'cpu_heatsink') {
+              // CPU Heatsink: tembaga (#b87333, metalness 0.9)
+              physMat.color.setHex(0xb87333);
+              physMat.metalness = 0.90;
+              physMat.roughness = 0.22;
+              physMat.clearcoat = 0.25;
+            } else if (child.name === 'fan') {
+              // Fan: abu gelap, bilah terlihat
+              physMat.color.setHex(0x282b32);
+              physMat.metalness = 0.40;
+              physMat.roughness = 0.35;
+              physMat.clearcoat = 0.15;
+            } else if (child.name === 'ram_module') {
+              // RAM: hijau tua dengan konektor emas
+              physMat.map = ramTex;
+              physMat.color.setHex(0xffffff);
+              physMat.metalness = 0.30;
+              physMat.roughness = 0.40;
+            } else if (child.name === 'ssd_m2') {
+              // SSD M.2: hijau tua dengan konektor emas
+              physMat.map = ssdTex;
+              physMat.color.setHex(0xffffff);
+              physMat.metalness = 0.30;
+              physMat.roughness = 0.40;
+            } else if (child.name === 'speaker_left' || child.name === 'speaker_right') {
+              // Speaker: hitam dengan membran abu
+              physMat.map = speakerTex;
+              physMat.color.setHex(0xffffff);
+              physMat.metalness = 0.25;
+              physMat.roughness = 0.45;
+            } else if (child.name === 'rubber_feet') {
+              physMat.color.setHex(0x121316);
+              physMat.metalness = 0.0;
+              physMat.roughness = 0.92;
+            } else if (child.name === 'screws') {
+              // Screws: perak kecil mengilap
+              physMat.color.setHex(0xdbe3ed);
+              physMat.metalness = 0.95;
+              physMat.roughness = 0.12;
+              physMat.clearcoat = 0.35;
+            } else if (child.name === 'hinge_left' || child.name === 'hinge_right') {
+              physMat.color.setHex(0x9aa3ad);
+              physMat.metalness = 0.88;
+              physMat.roughness = 0.26;
+            } else if (child.name === 'webcam_module') {
+              physMat.color.setHex(0x0a0c10);
+              physMat.metalness = 0.40;
+              physMat.roughness = 0.15;
+            }
+
+            child.material = physMat;
+
+            // 5. Highlight tepi lewat EdgesGeometry tipis (threshold 55 derajat, opacity 0.07) sebagai aksen bevel halus
+            if (['lid_cover', 'keyboard_deck', 'bottom_case', 'touchpad', 'cpu_heatsink', 'battery'].includes(child.name)) {
+              const edgesGeom = new THREE.EdgesGeometry(child.geometry, 55);
+              const clonedEdgeMat = edgeLineMat.clone();
+              const edgesLine = new THREE.LineSegments(edgesGeom, clonedEdgeMat);
+              edgesLine.raycast = () => {};
+              child.add(edgesLine);
+              child.userData.bevelEdgeMat = clonedEdgeMat;
+            }
+
+            // Konversi arah Exploded View dengan distribusi lapisan merata
+            const cfg = CONFIG.components[child.name] || { dir: [0, 1, 0], dist: 4.0, desc: child.name };
+            const dirVec = new THREE.Vector3(...cfg.dir).normalize();
+            const dist = cfg.dist * CONFIG.explodeScale;
+
+            const assembledPos = child.position.clone();
+            const explodedPos = assembledPos.clone().addScaledVector(dirVec, dist);
+
+            child.userData.assembledPos = assembledPos;
+            child.userData.explodedPos = explodedPos;
+            child.userData.desc = cfg.desc;
+            child.userData.origEmissive = child.name === 'display_panel' ? new THREE.Color(0xffffff) : new THREE.Color(0x000000);
+            child.userData.origEmissiveIntensity = child.name === 'display_panel' ? 0.62 : 0.0;
+            child.userData.origColor = physMat.color ? physMat.color.clone() : new THREE.Color(0xffffff);
+            child.userData.origMaterial = physMat.clone();
+
+            // Status transisi halus untuk crossfade ghost, redup, pop-out & outline
+            child.userData.curOpacity = 1.0;
+            child.userData.targetOpacity = 1.0;
+            child.userData.curColor = child.userData.origColor.clone();
+            child.userData.targetColor = child.userData.origColor.clone();
+            child.userData.curHighlightGlow = 0.0;
+            child.userData.targetHighlightGlow = 0.0;
+            child.userData.curScale = 1.0;
+            child.userData.targetScale = 1.0;
+            child.userData.curOffsetX = 0.0;
+            child.userData.curOffsetY = 0.0;
+            child.userData.curOffsetZ = 0.0;
+            child.userData.targetOffsetX = 0.0;
+            child.userData.targetOffsetY = 0.0;
+            child.userData.targetOffsetZ = 0.0;
+
+            // Outline 2px (EdgesGeometry) dengan animasi pulsa halus HANYA saat komponen aktif sebagai target
+            const outlineGeom = new THREE.EdgesGeometry(child.geometry, 42);
+            const outlineMat = new THREE.LineBasicMaterial({
+              color: 0x7cc4ff,
+              linewidth: 2,
+              transparent: true,
+              opacity: 0.0,
+              depthTest: true,
+              depthWrite: false
+            });
+            const outlineMesh = new THREE.LineSegments(outlineGeom, outlineMat);
+            outlineMesh.name = 'target_outline';
+            outlineMesh.scale.setScalar(1.003);
+            outlineMesh.raycast = () => {};
+            outlineMesh.visible = false;
+            child.add(outlineMesh);
+            child.userData.highlightOutline = outlineMesh;
+            child.userData.highlightOutlineMat = outlineMat;
+
+            explodedParts.push({
+              mesh: child,
+              name: child.name,
+              assembledPos,
+              explodedPos,
+              dir: dirVec,
+              dist
+            });
+          }
+        });
+
+        applyBodyFinish('slateBlue');
+
+        // 7. Garis vertikal tipis (opacity 0.25) di tengah antar lapisan
+        centerLineGeom = new THREE.BufferGeometry();
+        const centerLineArr = new Float32Array([0, 0, 0, 0, 0, 0]);
+        centerLineGeom.setAttribute('position', new THREE.BufferAttribute(centerLineArr, 3));
+        centerLineMat = new THREE.LineBasicMaterial({
+          color: 0x8cb8d8,
+          transparent: true,
+          opacity: 0.0,
+          depthWrite: false
+        });
+        centerVerticalLine = new THREE.Line(centerLineGeom, centerLineMat);
+        model.add(centerVerticalLine);
+
+        // Buat Pivot Buka-Tutup Layar ("display_pivot")
+        displayPivot = new THREE.Object3D();
+        displayPivot.name = 'display_pivot';
+
+        const hLeft = componentMeshes['hinge_left'];
+        const hRight = componentMeshes['hinge_right'];
+        let hingePos = new THREE.Vector3(0, 1.08, -10.55);
+        if (hLeft && hRight) {
+          hingePos.copy(hLeft.position).add(hRight.position).multiplyScalar(0.5);
+        }
+        displayPivot.position.copy(hingePos);
+        model.add(displayPivot);
+
+        const groupDisplay = model.getObjectByName('group_display');
+        if (groupDisplay) {
+          displayPivot.attach(groupDisplay);
+        } else {
+          ['lid_cover', 'display_bezel', 'display_panel', 'webcam_module'].forEach(n => {
+            if (componentMeshes[n]) displayPivot.attach(componentMeshes[n]);
+          });
+        }
+
+        // Hitung seluruh frame kamera berbasis fitCamera(box, fov, aspect, margin)
+        computeAllStageCameraFrames();
+        startIntroSequence();
+      },
+      (xhr) => {
+        if (xhr.total > 0) {
+          const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+          document.getElementById('loaderBar').style.width = pct + '%';
+          document.getElementById('loaderPct').innerText = `MEMUAT TEKSTUR & ARSITEKTUR 3D ${pct}%`;
+        }
+      },
+      (err) => {
+        console.error('Gagal memuat GLB:', err);
+        document.getElementById('preloader').classList.add('loaded');
+        document.getElementById('error-fallback').classList.add('active');
+        document.body.classList.remove('is-locked');
+      }
+    );
+
+    /* ===========================================================
+       8. STATE KAMERA & INTRO SEQUENCE
+    =========================================================== */
+    const state = {
+      camX: -12,
+      camY: 10,
+      camZ: 28,
+      targetX: 0,
+      targetY: 2.0,
+      targetZ: 0,
+      fov: 35,
+      viewOffsetX: 0,
+      viewOffsetY: 0,
+      explodeFactor: 0,
+      explodeOrbit: 0,
+      envIntensity: 0.60,
+      keyLightIntensity: 1.85,
+      rimLightIntensity: 0.85,
+      fillLightIntensity: 0.45,
+      lidOpenFactor: 0,
+      screenBrightness: 0.85,
+      keyboardGlow: 0.35,
+      airflowAlpha: 0,
+      manualExplodeOverride: null,
+      manualLidOverride: null
+    };
+
+    let isCinematicTourActive = false;
+    let tourTimeline = null;
+    let masterScrollTrigger = null;
+
+    function startIntroSequence() {
+      document.getElementById('preloader').classList.add('loaded');
+
+      const fIntro = stageCameraFrames.intro;
+      state.camX = fIntro.pos.x;
+      state.camY = fIntro.pos.y;
+      state.camZ = fIntro.pos.z;
+      state.targetX = fIntro.target.x;
+      state.targetY = fIntro.target.y;
+      state.targetZ = fIntro.target.z;
+      state.fov = fIntro.fov;
+      state.viewOffsetX = fIntro.viewOffsetX;
+      state.viewOffsetY = fIntro.viewOffsetY;
+
+      camera.position.set(state.camX, state.camY, state.camZ);
+
+      const heroTitle = document.getElementById('heroTitle');
+      const words = heroTitle.innerText.trim().split(/\s+/);
+      heroTitle.innerHTML = words.map(w => `<span class="word">${w}</span>`).join(' ');
+
+      const tlIntro = gsap.timeline({
+        onComplete: () => {
+          document.body.classList.remove('is-locked');
+          initMasterScrollTimeline();
+        }
+      });
+
+      if (laptopRoot) {
+        laptopRoot.rotation.y = -0.35;
+        laptopRoot.rotation.x = 0.08;
+        tlIntro.to(laptopRoot.rotation, {
+          y: 0.38,
+          x: 0.06,
+          duration: 2.2,
+          ease: 'power3.out'
+        }, 0.1);
+      }
+
+      tlIntro.to(state, {
+        lidOpenFactor: 0.95,
+        duration: 2.0,
+        ease: 'power3.inOut'
+      }, 0.2);
+
+      tlIntro.to('#heroEyebrow', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 0.3);
+      tlIntro.to('.hero-title .word', {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.08,
+        ease: 'power3.out'
+      }, 0.45);
+      tlIntro.to('#heroSub', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 0.9);
+      tlIntro.to('#heroActionsGroup', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, 1.1);
+    }
+
+    /* ===========================================================
+       9. MASTER SCROLLTRIGGER TIMELINE (BERBASIS FITCAMERA)
+    =========================================================== */
+    const chapterButtons = document.querySelectorAll('.chapter-btn');
+    function updateActiveChapterDock(p) {
+      let activeIdx = 0;
+      if (p < 0.05) activeIdx = 0;
+      else if (p < 0.18) activeIdx = 1;
+      else if (p < 0.48) activeIdx = 2;
+      else if (p < 0.73) activeIdx = 3;
+      else if (p < 0.88) activeIdx = 4;
+      else activeIdx = 5;
+
+      chapterButtons.forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === activeIdx);
+      });
+    }
+
+    const chapterTargetProgress = [0.0, 0.08, 0.22, 0.58, 0.80, 0.96];
+    chapterButtons.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll > 0 && chapterTargetProgress[idx] !== undefined) {
+          window.scrollTo({ top: maxScroll * chapterTargetProgress[idx], behavior: 'smooth' });
+        } else {
+          const targetSel = btn.getAttribute('data-target');
+          const targetEl = document.querySelector(targetSel);
+          if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    function initMasterScrollTimeline() {
+      if (masterScrollTrigger) {
+        masterScrollTrigger.kill();
+      }
+
+      const fIntro = stageCameraFrames.intro;
+      const fMacro = stageCameraFrames.macro;
+      const fExpl  = stageCameraFrames.explode;
+      const fAct   = stageCameraFrames.action;
+      const fPlay  = stageCameraFrames.playground;
+      const fCta   = stageCameraFrames.cta;
+
+      const masterTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#scroll-container',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.9,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const p = self.progress;
+            updateActiveChapterDock(p);
+
+            document.getElementById('scrollHint').style.opacity = p > 0.015 ? '0' : '1';
+
+            const inExploded = p >= 0.17 && p <= 0.48;
+            document.getElementById('explodedHudHeader').classList.toggle('visible', inExploded);
+
+            const inPlayground = p >= 0.73 && p <= 0.88;
+
+            // Sembunyikan scrim kiri saat di Exploded View atau Studio 360
+            document.body.classList.toggle('scrim-hidden', inExploded || inPlayground);
+
+            if (!inPlayground) {
+              state.manualExplodeOverride = null;
+              state.manualLidOverride = null;
+              document.getElementById('btnToggleExplode').classList.remove('active');
+              document.getElementById('btnToggleLid').classList.remove('active');
+            }
+
+            if (inPlayground) {
+              if (!controls.enabled) {
+                controls.target.copy(stageCameraFrames.playground.target);
+                controls.minDistance = stageCameraFrames.playground.fitDistance * 0.72;
+                controls.maxDistance = stageCameraFrames.playground.fitDistance * 2.0;
+                controls.enabled = true;
+                canvas.style.pointerEvents = 'auto';
+              }
+            } else {
+              if (controls.enabled) {
+                controls.enabled = false;
+                canvas.style.pointerEvents = 'none';
+              }
+            }
+          }
+        }
+      });
+
+      masterScrollTrigger = masterTL.scrollTrigger;
+
+      const fExplStart = stageCameraFrames.explodeStart || stageCameraFrames.explode;
+
+      // Pastikan posisi awal timeline sesuai frame intro
+      masterTL.set(state, {
+        camX: fIntro.pos.x,
+        camY: fIntro.pos.y,
+        camZ: fIntro.pos.z,
+        targetX: fIntro.target.x,
+        targetY: fIntro.target.y,
+        targetZ: fIntro.target.z,
+        fov: fIntro.fov,
+        viewOffsetX: fIntro.viewOffsetX,
+        viewOffsetY: fIntro.viewOffsetY,
+        lidOpenFactor: 0.95,
+        explodeFactor: 0.0,
+        explodeOrbit: 0.0,
+        envIntensity: 0.60,
+        keyLightIntensity: 1.85,
+        rimLightIntensity: 0.85,
+        fillLightIntensity: 0.45,
+        airflowAlpha: 0.0
+      }, 0.0);
+
+      // TAHAP 1: CLOSE-UP MATERIAL & BODI TERTUTUP (0.00 -> 0.15)
+      masterTL.to(state, {
+        camX: fMacro.pos.x,
+        camY: fMacro.pos.y,
+        camZ: fMacro.pos.z,
+        targetX: fMacro.target.x,
+        targetY: fMacro.target.y,
+        targetZ: fMacro.target.z,
+        fov: fMacro.fov,
+        viewOffsetX: fMacro.viewOffsetX,
+        viewOffsetY: fMacro.viewOffsetY,
+        lidOpenFactor: 0.0,
+        airflowAlpha: 0.0,
+        duration: 0.15,
+        ease: 'power2.inOut'
+      }, 0.0);
+
+      if (laptopRoot) {
+        masterTL.to(laptopRoot.rotation, {
+          y: -0.48,
+          x: 0.16,
+          duration: 0.15,
+          ease: 'power2.inOut'
+        }, 0.0);
+      }
+
+      masterTL.to('#cardMacro', { opacity: 1, y: 0, duration: 0.04, ease: 'power2.out' }, 0.03);
+      masterTL.to('#cardMacro', { opacity: 0, y: -24, duration: 0.03, ease: 'power2.in' }, 0.11);
+
+      // TAHAP 2: EXPLODED VIEW (0.15 -> 0.48)
+      // 1. Laptop terbuka dulu di sudut 106° (lidOpenFactor: 1.0), kamera transisi ke sudut 32.5 derajat
+      //    dari atas (three-quarter), lalu terpisah menjadi kelompok layar (tegak di belakang) dan kelompok bodi (vertikal)
+      masterTL.to(state, {
+        lidOpenFactor: 1.0,
+        duration: 0.04,
+        ease: 'power2.out'
+      }, 0.15);
+
+      masterTL.to(state, {
+        camX: fExplStart.pos.x,
+        camY: fExplStart.pos.y,
+        camZ: fExplStart.pos.z,
+        targetX: fExplStart.target.x,
+        targetY: fExplStart.target.y,
+        targetZ: fExplStart.target.z,
+        fov: fExplStart.fov,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        lidOpenFactor: 1.0,
+        explodeFactor: 1.0,
+        explodeOrbit: 0.0,
+        envIntensity: 1.15,
+        keyLightIntensity: 2.30,
+        rimLightIntensity: 1.20,
+        fillLightIntensity: 0.75,
+        airflowAlpha: 0.0,
+        duration: 0.07,
+        ease: 'power2.out'
+      }, 0.16);
+
+      if (laptopRoot) {
+        masterTL.to(laptopRoot.rotation, {
+          y: 0.0,
+          x: 0.0,
+          duration: 0.07,
+          ease: 'power2.out'
+        }, 0.155);
+      }
+
+      // 2. Kamera mengorbit pelan 45 derajat di sisi depan (-22.5° s.d. +22.5°) agar layar tidak pernah terlihat dari belakang
+      masterTL.to(state, {
+        explodeOrbit: 1.0,
+        duration: 0.25,
+        ease: 'none',
+        onUpdate: () => {
+          if (stageCameraFrames.explodeStart) {
+            const center = stageCameraFrames.explodeStart.center;
+            const dist = stageCameraFrames.explodeStart.distance;
+            const elevRad = THREE.MathUtils.degToRad(32.5);
+            const rXZ = dist * Math.cos(elevRad);
+            const hY = dist * Math.sin(elevRad);
+            const ang = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(-22.5), THREE.MathUtils.degToRad(22.5), state.explodeOrbit);
+            state.camX = center.x + rXZ * Math.sin(ang);
+            state.camY = center.y + hY;
+            state.camZ = center.z + rXZ * Math.cos(ang);
+            state.targetX = center.x;
+            state.targetY = center.y;
+            state.targetZ = center.z;
+          }
+        }
+      }, 0.23);
+
+      // TAHAP 3: FITUR DALAM AKSI — PARTIKEL HANYA MUNCUL DI TAHAP INI (0.48 -> 0.74)
+      masterTL.to(state, {
+        explodeFactor: 0.0,
+        envIntensity: 0.60,
+        keyLightIntensity: 1.85,
+        rimLightIntensity: 0.85,
+        fillLightIntensity: 0.45,
+        duration: 0.08,
+        ease: 'power3.inOut'
+      }, 0.48);
+
+      if (laptopRoot) {
+        masterTL.to(laptopRoot.rotation, {
+          y: 0.32,
+          x: 0.05,
+          duration: 0.14,
+          ease: 'power3.inOut'
+        }, 0.48);
+      }
+
+      masterTL.to(state, {
+        camX: fAct.pos.x,
+        camY: fAct.pos.y,
+        camZ: fAct.pos.z,
+        targetX: fAct.target.x,
+        targetY: fAct.target.y,
+        targetZ: fAct.target.z,
+        fov: fAct.fov,
+        viewOffsetX: fAct.viewOffsetX,
+        viewOffsetY: fAct.viewOffsetY,
+        lidOpenFactor: 1.0,
+        screenBrightness: 0.90,
+        keyboardGlow: 0.85,
+        airflowAlpha: 0.75,
+        duration: 0.22,
+        ease: 'power2.out'
+      }, 0.52);
+
+      masterTL.to('#cardAction', { opacity: 1, y: 0, duration: 0.06, ease: 'power2.out' }, 0.54);
+      masterTL.to('#cardAction', { opacity: 0, y: -24, duration: 0.04, ease: 'power2.in' }, 0.70);
+
+      // TAHAP 4: STUDIO PLAYGROUND 360 (0.74 -> 0.88)
+      masterTL.to(state, {
+        camX: fPlay.pos.x,
+        camY: fPlay.pos.y,
+        camZ: fPlay.pos.z,
+        targetX: fPlay.target.x,
+        targetY: fPlay.target.y,
+        targetZ: fPlay.target.z,
+        fov: fPlay.fov,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        airflowAlpha: 0.0,
+        duration: 0.14,
+        ease: 'power2.inOut'
+      }, 0.74);
+
+      if (laptopRoot) {
+        masterTL.to(laptopRoot.rotation, {
+          y: -0.30,
+          x: 0.05,
+          duration: 0.14,
+          ease: 'power2.out'
+        }, 0.74);
+      }
+
+      // TAHAP 5: PENUTUP / SPESIFIKASI & CTA (0.88 -> 1.00)
+      masterTL.to(state, {
+        camX: fCta.pos.x,
+        camY: fCta.pos.y,
+        camZ: fCta.pos.z,
+        targetX: fCta.target.x,
+        targetY: fCta.target.y,
+        targetZ: fCta.target.z,
+        fov: fCta.fov,
+        viewOffsetX: fCta.viewOffsetX,
+        viewOffsetY: fCta.viewOffsetY,
+        airflowAlpha: 0.0,
+        duration: 0.12,
+        ease: 'power2.out'
+      }, 0.88);
+
+      if (laptopRoot) {
+        masterTL.to(laptopRoot.rotation, {
+          y: -0.42,
+          x: 0.06,
+          duration: 0.12,
+          ease: 'power2.out'
+        }, 0.88);
+      }
+    }
+
+    /* ===========================================================
+       10. UPDATE EXPLODED VIEW & CALLOUT LABELS DI LUAR BOUNDING BOX MODEL
+    =========================================================== */
+    const tempVec = new THREE.Vector3();
+    const cornerVec = new THREE.Vector3();
+    const callouts = [
+      {
+        id: 'lbl1',
+        title: 'Layar',
+        line: document.getElementById('line1'),
+        dot: document.getElementById('dot1'),
+        pulse: document.getElementById('pulse1'),
+        primaryComp: 'display_panel',
+        targetComps: ['display_panel'],
+        obstructingComps: ['keycaps'],
+        side: 'left',
+        range: [0.20, 0.265],
+        focusDir: new THREE.Vector3(-0.22, 0.36, 0.90).normalize()
+      },
+      {
+        id: 'lbl2',
+        title: 'Prosesor dan Pendingin',
+        line: document.getElementById('line2'),
+        dot: document.getElementById('dot2'),
+        pulse: document.getElementById('pulse2'),
+        primaryComp: 'cpu_heatsink',
+        targetComps: ['cpu_heatsink', 'fan'],
+        obstructingComps: ['keycaps', 'keyboard_deck', 'touchpad', 'hinge_left', 'hinge_right'],
+        side: 'right',
+        range: [0.27, 0.335],
+        focusDir: new THREE.Vector3(-0.26, 0.56, 0.78).normalize()
+      },
+      {
+        id: 'lbl3',
+        title: 'Baterai',
+        line: document.getElementById('line3'),
+        dot: document.getElementById('dot3'),
+        pulse: document.getElementById('pulse3'),
+        primaryComp: 'battery',
+        targetComps: ['battery'],
+        obstructingComps: ['keycaps', 'keyboard_deck', 'touchpad', 'motherboard', 'ram_module', 'ssd_m2', 'speaker_left', 'speaker_right'],
+        side: 'left',
+        range: [0.34, 0.405],
+        focusDir: new THREE.Vector3(0.24, 0.52, 0.82).normalize()
+      },
+      {
+        id: 'lbl4',
+        title: 'Keyboard',
+        line: document.getElementById('line4'),
+        dot: document.getElementById('dot4'),
+        pulse: document.getElementById('pulse4'),
+        primaryComp: 'keycaps',
+        targetComps: ['keycaps'],
+        obstructingComps: [],
+        side: 'right',
+        range: [0.41, 0.475],
+        focusDir: new THREE.Vector3(0.25, 0.54, 0.80).normalize()
+      }
+    ];
+
+    // Status kamera fokus untuk komponen yang sedang disorot (GSAP 0.8s)
+    const cameraFocusState = {
+      weight: 0.0,
+      camX: 0,
+      camY: 0,
+      camZ: 0,
+      targetX: 0,
+      targetY: 0,
+      targetZ: 0
+    };
+    let cameraFocusTween = null;
+    let activeFocusCalloutId = null;
+
+    // Hitung proyeksi 2D bounding box seluruh model di layar agar label berada di luar bodi laptop
+    function getModelScreenBounds() {
+      let minX = window.innerWidth * 0.35;
+      let maxX = window.innerWidth * 0.65;
+      let minY = window.innerHeight * 0.20;
+      let maxY = window.innerHeight * 0.80;
+
+      if (!laptopRoot) return { minX, maxX, minY, maxY };
+
+      const box = new THREE.Box3().setFromObject(laptopRoot);
+      if (box.isEmpty()) return { minX, maxX, minY, maxY };
+
+      minX = Infinity;
+      maxX = -Infinity;
+      minY = Infinity;
+      maxY = -Infinity;
+
+      const xs = [box.min.x, box.max.x];
+      const ys = [box.min.y, box.max.y];
+      const zs = [box.min.z, box.max.z];
+
+      for (let ix = 0; ix < 2; ix++) {
+        for (let iy = 0; iy < 2; iy++) {
+          for (let iz = 0; iz < 2; iz++) {
+            cornerVec.set(xs[ix], ys[iy], zs[iz]).project(camera);
+            const sx = (cornerVec.x * 0.5 + 0.5) * window.innerWidth;
+            const sy = (-(cornerVec.y * 0.5) + 0.5) * window.innerHeight;
+            if (sx < minX) minX = sx;
+            if (sx > maxX) maxX = sx;
+            if (sy < minY) minY = sy;
+            if (sy > maxY) maxY = sy;
+          }
+        }
+      }
+
+      // Batasi agar saat kamera mendekat ke komponen target (maks 45%), batas kolom kiri/kanan label tetap di area samping
+      minX = Math.max(window.innerWidth * 0.22, Math.min(window.innerWidth * 0.42, minX));
+      maxX = Math.min(window.innerWidth * 0.78, Math.max(window.innerWidth * 0.58, maxX));
+      return { minX, maxX, minY, maxY };
+    }
+
+    // Sorot komponen target (naik sedikit, skala 1.03, outline 2px biru es, emissive lembut, pertahankan warna & material asli),
+    // komponen yang menghalangi target dari sudut kamera dibuat transparan (opacity 0.12, depthWrite false),
+    // komponen non-target diredupkan (opacity 0.38, warna abu kebiruan) namun bentuknya tetap terbaca
+    function updateExplodedComponentHighlighting(activeCallout) {
+      if (!laptopRoot) return;
+
+      const calloutId = activeCallout ? activeCallout.id : null;
+
+      // 5. Saat label aktif, kamera mendekat halus (GSAP 0.8 detik) ke komponen target
+      if (calloutId !== activeFocusCalloutId) {
+        activeFocusCalloutId = calloutId;
+        if (cameraFocusTween) cameraFocusTween.kill();
+
+        if (activeCallout) {
+          cameraFocusTween = gsap.to(cameraFocusState, {
+            weight: 1.0,
+            duration: 0.8,
+            ease: 'power2.out'
+          });
+        } else {
+          cameraFocusTween = gsap.to(cameraFocusState, {
+            weight: 0.0,
+            duration: 0.8,
+            ease: 'power2.inOut'
+          });
+        }
+      }
+
+      if (activeCallout) {
+        const obstructingSet = activeCallout.obstructingComps || [];
+
+        for (let i = 0; i < explodedParts.length; i++) {
+          const part = explodedParts[i];
+          const m = part.mesh;
+          const ud = m.userData;
+          const isTarget = activeCallout.targetComps.includes(part.name);
+          const isObstructing = obstructingSet.includes(part.name);
+
+          if (isTarget) {
+            // 8. Komponen target: naik sedikit, skala 1.03, outline 2px biru es, emissive lembut (0.12)
+            //    Pertahankan warna dan material aslinya (jangan diganti jadi biru muda polos)
+            ud.targetOpacity = 1.0;
+            if (ud.origColor) ud.targetColor.copy(ud.origColor);
+            ud.targetHighlightGlow = 0.12;
+            ud.targetScale = 1.03;
+            if (part.name === 'display_panel') {
+              // Di dalam group_display yang miring -106°, local -Y menggeser panel sedikit maju & naik
+              ud.targetOffsetX = 0.0;
+              ud.targetOffsetY = -0.35;
+              ud.targetOffsetZ = 0.25;
+            } else {
+              ud.targetOffsetX = 0.0;
+              ud.targetOffsetY = 0.55;
+              ud.targetOffsetZ = 0.25;
+            }
+          } else if (isObstructing) {
+            // 10. Komponen yang menghalangi target dari sudut kamera dibuat transparan (opacity 0.12, depthWrite false)
+            ud.targetOpacity = 0.12;
+            if (ud.origColor) {
+              ud.targetColor.copy(ud.origColor).lerp(new THREE.Color(0x52667a), 0.35);
+            }
+            ud.targetHighlightGlow = 0.0;
+            ud.targetScale = 1.0;
+            ud.targetOffsetX = 0.0;
+            ud.targetOffsetY = 0.0;
+            ud.targetOffsetZ = 0.0;
+          } else {
+            // 9. Komponen non-target: diredupkan dan sedikit transparan (opacity 0.38, abu kebiruan), tetap terbaca bentuknya
+            ud.targetOpacity = 0.38;
+            if (ud.origColor) {
+              ud.targetColor.copy(ud.origColor).lerp(new THREE.Color(0x384a5c), 0.45);
+            }
+            ud.targetHighlightGlow = 0.0;
+            ud.targetScale = 1.0;
+            ud.targetOffsetX = 0.0;
+            ud.targetOffsetY = 0.0;
+            ud.targetOffsetZ = 0.0;
+          }
+        }
+      } else {
+        // Saat tidak ada label aktif, semua komponen kembali ke tampilan normal
+        for (let i = 0; i < explodedParts.length; i++) {
+          const part = explodedParts[i];
+          const m = part.mesh;
+          const ud = m.userData;
+          ud.targetOpacity = 1.0;
+          if (ud.origColor) ud.targetColor.copy(ud.origColor);
+          ud.targetHighlightGlow = 0.0;
+          ud.targetScale = 1.0;
+          ud.targetOffsetX = 0.0;
+          ud.targetOffsetY = 0.0;
+          ud.targetOffsetZ = 0.0;
+        }
+      }
+    }
+
+    function updateExplodedState(explodeAmount, nowMs = 0) {
+      // Garis vertikal tipis (opacity 0.25) di tengah kelompok bodi vertikal pada Exploded View
+      if (centerVerticalLine && centerLineGeom && centerLineMat) {
+        centerLineMat.opacity = explodeAmount * 0.25;
+        if (explodeAmount > 0.001) {
+          const yMin = -8.2 * CONFIG.explodeScale * explodeAmount;
+          const yMax = 6.2 * CONFIG.explodeScale * explodeAmount;
+          const arr = centerLineGeom.attributes.position.array;
+          arr[0] = 0; arr[1] = yMin; arr[2] = 0;
+          arr[3] = 0; arr[4] = yMax; arr[5] = 0;
+          centerLineGeom.attributes.position.needsUpdate = true;
+          centerVerticalLine.visible = true;
+        } else {
+          centerVerticalLine.visible = false;
+        }
+      }
+
+      const scrollP = masterScrollTrigger ? masterScrollTrigger.progress : 0;
+      const activeCalloutItem = callouts.find(item => scrollP >= item.range[0] && scrollP <= item.range[1]) || null;
+
+      // Update target highlighting & ghost layers terlebih dahulu
+      updateExplodedComponentHighlighting(activeCalloutItem);
+
+      // 12. Transisi antar label halus (crossfade 0.5 detik) tanpa kedipan
+      const lerpSpeed = Math.min(1.0, 0.016 * 6.0);
+
+      for (let i = 0; i < explodedParts.length; i++) {
+        const part = explodedParts[i];
+        const m = part.mesh;
+        const ud = m.userData;
+
+        ud.curOpacity += (ud.targetOpacity - ud.curOpacity) * lerpSpeed;
+        ud.curHighlightGlow += (ud.targetHighlightGlow - ud.curHighlightGlow) * lerpSpeed;
+        ud.curScale += (ud.targetScale - ud.curScale) * lerpSpeed;
+        ud.curOffsetX += (ud.targetOffsetX - ud.curOffsetX) * lerpSpeed;
+        ud.curOffsetY += (ud.targetOffsetY - ud.curOffsetY) * lerpSpeed;
+        ud.curOffsetZ += (ud.targetOffsetZ - ud.curOffsetZ) * lerpSpeed;
+        m.material.color.lerp(ud.targetColor, lerpSpeed);
+
+        m.material.opacity = ud.curOpacity;
+        m.material.transparent = ud.curOpacity < 0.98;
+        m.material.depthWrite = ud.curOpacity > 0.25;
+
+        if (ud.bevelEdgeMat) {
+          ud.bevelEdgeMat.opacity = 0.07 * ud.curOpacity;
+        }
+
+        if (part.name === 'display_panel') {
+          // Pertahankan tampilan UI Windows 11 asli pada layar (jangan ditimpa warna biru polos)
+          m.material.emissive.setHex(0xffffff);
+          m.material.emissiveIntensity = (ud.curHighlightGlow > 0.02)
+            ? 0.78
+            : ((explodeAmount > 0.15) ? (0.55 * ud.curOpacity) : 0.65);
+        } else if (ud.curHighlightGlow > 0.01) {
+          if (!m.material.emissive) m.material.emissive = new THREE.Color();
+          m.material.emissive.setHex(0x7cc4ff);
+          m.material.emissiveIntensity = ud.curHighlightGlow;
+        } else if (part.name !== 'keycaps' || explodeAmount >= 0.15) {
+          if (m.material.emissive) m.material.emissive.setHex(0x000000);
+          m.material.emissiveIntensity = 0.0;
+        }
+
+        m.scale.setScalar(ud.curScale);
+
+        // Update outline tipis 2px berwarna biru es HANYA saat komponen aktif sebagai target
+        if (ud.highlightOutline && ud.highlightOutlineMat) {
+          if (ud.curHighlightGlow > 0.01) {
+            ud.highlightOutline.visible = true;
+            const pulse = 0.65 + Math.sin(nowMs * 0.005) * 0.30;
+            ud.highlightOutlineMat.opacity = pulse * Math.min(1.0, ud.curHighlightGlow / 0.12);
+          } else {
+            ud.highlightOutline.visible = false;
+            ud.highlightOutlineMat.opacity = 0.0;
+          }
+        }
+
+        // Posisi exploded dasar + pop-out offset
+        const basePos = new THREE.Vector3().lerpVectors(part.assembledPos, part.explodedPos, explodeAmount);
+        m.position.set(
+          basePos.x + ud.curOffsetX,
+          basePos.y + ud.curOffsetY,
+          basePos.z + ud.curOffsetZ
+        );
+      }
+
+      if (laptopRoot) {
+        laptopRoot.updateMatrixWorld(true);
+      }
+
+      // 5. Saat label aktif, kamera mendekat halus (GSAP 0.8s) ke komponen target,
+      //    maksimal sampai target mengisi 45% layar, dan jangan pernah masuk ke dalam susunan atau menembus lid
+      if (activeCalloutItem) {
+        const targetBox = new THREE.Box3();
+        activeCalloutItem.targetComps.forEach(n => {
+          const m = componentMeshes[n];
+          if (m) targetBox.union(new THREE.Box3().setFromObject(m));
+        });
+        const tCenter = new THREE.Vector3();
+        targetBox.getCenter(tCenter);
+        const tSize = new THREE.Vector3();
+        targetBox.getSize(tSize);
+
+        const maxDim = Math.max(tSize.x, tSize.z, tSize.y * 1.4, 10.5);
+        const vFovRad = THREE.MathUtils.degToRad(camera.fov || 36);
+        const baseExplodeDist = stageCameraFrames.explodeStart ? stageCameraFrames.explodeStart.distance : 44;
+        const distFor45Pct = (maxDim * 0.5) / (0.45 * Math.tan(vFovRad * 0.5));
+        const desiredDist = Math.max(Math.max(28, baseExplodeDist * 0.64), Math.min(baseExplodeDist * 0.86, distFor45Pct));
+
+        const focusDir = activeCalloutItem.focusDir || new THREE.Vector3(0.25, 0.54, 0.80).normalize();
+        const targetCamPos = tCenter.clone().addScaledVector(focusDir, desiredDist);
+
+        // Pastikan kamera selalu berada di depan lid & di luar susunan (tidak pernah menembus lid atau masuk ke dalam)
+        targetCamPos.z = Math.max(targetCamPos.z, 20.0);
+        targetCamPos.y = Math.max(targetCamPos.y, tCenter.y + 9.5);
+
+        cameraFocusState.camX = targetCamPos.x;
+        cameraFocusState.camY = targetCamPos.y;
+        cameraFocusState.camZ = targetCamPos.z;
+        cameraFocusState.targetX = tCenter.x;
+        cameraFocusState.targetY = tCenter.y;
+        cameraFocusState.targetZ = tCenter.z;
+      }
+
+      const screenBounds = activeCalloutItem ? getModelScreenBounds() : null;
+
+      callouts.forEach((item) => {
+        const el = document.getElementById(item.id);
+        const active = item === activeCalloutItem;
+
+        if (active && screenBounds) {
+          el.classList.add('active');
+
+          // 6. Titik label dihitung dari pusat Box3 komponen target setelah posisi exploded (world position),
+          //    lalu project() ke layar, diperbarui tiap frame
+          const targetBox = new THREE.Box3();
+          item.targetComps.forEach(n => {
+            const m = componentMeshes[n];
+            if (m) targetBox.union(new THREE.Box3().setFromObject(m));
+          });
+          if (!targetBox.isEmpty()) {
+            const anchorWorld = new THREE.Vector3();
+            targetBox.getCenter(anchorWorld);
+
+            // Proyeksi ke layar (sx, sy)
+            tempVec.copy(anchorWorld).project(camera);
+            const sx = (tempVec.x * 0.5 + 0.5) * window.innerWidth;
+            const sy = (-(tempVec.y * 0.5) + 0.5) * window.innerHeight;
+
+            const cardW = el.offsetWidth || (isMobile ? 162 : 230);
+            const gapOut = isMobile ? 16 : 38;
+
+            let cardLeft, lineEndX;
+            if (item.side === 'left') {
+              const rightEdge = Math.min(screenBounds.minX - gapOut, sx - 42);
+              cardLeft = Math.max(16, rightEdge - cardW);
+              lineEndX = cardLeft + cardW;
+            } else {
+              const leftEdge = Math.max(screenBounds.maxX + gapOut, sx + 42);
+              cardLeft = Math.min(window.innerWidth - cardW - 16, leftEdge);
+              lineEndX = cardLeft;
+            }
+
+            const cardY = Math.max(120, Math.min(window.innerHeight - 110, sy));
+
+            el.style.left = `${cardLeft}px`;
+            el.style.top = `${cardY}px`;
+
+            item.line.setAttribute('x1', sx);
+            item.line.setAttribute('y1', sy);
+            item.line.setAttribute('x2', lineEndX);
+            item.line.setAttribute('y2', cardY);
+            item.line.style.opacity = '1';
+
+            item.dot.setAttribute('cx', sx);
+            item.dot.setAttribute('cy', sy);
+            item.dot.style.opacity = '1';
+
+            if (item.pulse) {
+              item.pulse.setAttribute('cx', sx);
+              item.pulse.setAttribute('cy', sy);
+              item.pulse.style.display = 'block';
+            }
+          }
+        } else {
+          el.classList.remove('active');
+          item.line.style.opacity = '0';
+          item.dot.style.opacity = '0';
+          if (item.pulse) item.pulse.style.display = 'none';
+        }
+      });
+    }
+
+    /* ===========================================================
+       11. INTERAKSI PLAYGROUND (WARNA, BONGKAR, ENGSEL, OS & HOVER)
+    =========================================================== */
+    const swatchBtns = document.querySelectorAll('.swatch-btn');
+    const colorNameEl = document.getElementById('activeColorName');
+    const toastEl = document.getElementById('toast-msg');
+    const toastTextEl = document.getElementById('toastText');
+    let toastTimer = null;
+
+    function showToast(message) {
+      toastTextEl.innerText = message;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
+    }
+
+    swatchBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        swatchBtns.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-checked', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
+
+        const key = btn.getAttribute('data-color');
+        const cData = CONFIG.colors[key];
+        if (cData) {
+          colorNameEl.innerText = cData.name;
+          applyBodyFinish(key);
+        }
+      });
+    });
+
+    const btnToggleExplode = document.getElementById('btnToggleExplode');
+    btnToggleExplode.addEventListener('click', () => {
+      const targetVal = state.manualExplodeOverride === 1.0 ? 0.0 : 1.0;
+      btnToggleExplode.classList.toggle('active', targetVal === 1.0);
+      const obj = { val: state.manualExplodeOverride ?? state.explodeFactor };
+      gsap.to(obj, {
+        val: targetVal,
+        duration: 0.85,
+        ease: 'power3.inOut',
+        onUpdate: () => { state.manualExplodeOverride = obj.val; }
+      });
+
+      // Sesuaikan jarak kamera OrbitControls di Studio 360 agar saat dibongkar seluruh susunan tetap muat
+      if (controls.enabled && stageCameraFrames.playground && stageCameraFrames.explodeStart) {
+        const desiredDist = targetVal > 0.5
+          ? stageCameraFrames.explodeStart.distance * 0.95
+          : stageCameraFrames.playground.fitDistance;
+        controls.maxDistance = Math.max(stageCameraFrames.playground.fitDistance * 2.0, desiredDist * 1.35);
+        const camDir = camera.position.clone().sub(controls.target).normalize();
+        const newCamPos = controls.target.clone().addScaledVector(camDir, desiredDist);
+        gsap.to(camera.position, {
+          x: newCamPos.x,
+          y: newCamPos.y,
+          z: newCamPos.z,
+          duration: 0.85,
+          ease: 'power2.out'
+        });
+      }
+    });
+
+    const btnToggleLid = document.getElementById('btnToggleLid');
+    btnToggleLid.addEventListener('click', () => {
+      const currentLid = state.manualLidOverride ?? state.lidOpenFactor;
+      const targetVal = currentLid > 0.5 ? 0.0 : 1.0;
+      btnToggleLid.classList.toggle('active', targetVal === 0.0);
+      const obj = { val: currentLid };
+      gsap.to(obj, {
+        val: targetVal,
+        duration: 0.85,
+        ease: 'power3.inOut',
+        onUpdate: () => { state.manualLidOverride = obj.val; }
+      });
+    });
+
+    const btnSwitchOS = document.getElementById('btnSwitchOS');
+    const osModeText = document.getElementById('osModeText');
+    btnSwitchOS.addEventListener('click', () => {
+      currentOSMode = (currentOSMode + 1) % 3;
+      osModeText.innerText = osModeLabels[currentOSMode];
+    });
+
+    document.getElementById('btnBuy').addEventListener('click', (e) => {
+      e.preventDefault();
+      const chosenColor = colorNameEl.innerText;
+      showToast(`Pemesanan segera dibuka untuk Advan Workplus Air (${chosenColor}).`);
+    });
+
+    // Kontrol Tur Sinematik 3D & Eksplorasi
+    const btnHeroTour = document.getElementById('btnHeroTour');
+    const btnHeroExplore = document.getElementById('btnHeroExplore');
+    const btnOrbitExploded = document.getElementById('btnOrbitExploded');
+
+    function startCinematicTour() {
+      if (isCinematicTourActive) {
+        stopCinematicTour();
+        return;
+      }
+      isCinematicTourActive = true;
+      if (btnHeroTour) btnHeroTour.classList.add('active');
+
+      controls.enabled = false;
+      canvas.style.pointerEvents = 'none';
+      showToast('Memulai Tur Sinematik 3D Advan Workplus Air...');
+
+      const fMacro = stageCameraFrames.macro;
+      const fExpl  = stageCameraFrames.explode;
+      const fAct   = stageCameraFrames.action;
+      const fIntro = stageCameraFrames.intro;
+
+      if (tourTimeline) tourTimeline.kill();
+      tourTimeline = gsap.timeline({
+        onComplete: () => {
+          stopCinematicTour();
+          showToast('Tur selesai.');
+        }
+      });
+
+      tourTimeline.to(state, {
+        camX: fMacro.pos.x,
+        camY: fMacro.pos.y,
+        camZ: fMacro.pos.z,
+        targetX: fMacro.target.x,
+        targetY: fMacro.target.y,
+        targetZ: fMacro.target.z,
+        fov: fMacro.fov,
+        viewOffsetX: 0,
+        viewOffsetY: 0,
+        lidOpenFactor: 0.0,
+        explodeFactor: 0.0,
+        duration: 2.8,
+        ease: 'power2.inOut'
+      }, 0);
+
+      if (laptopRoot) {
+        tourTimeline.to(laptopRoot.rotation, {
+          y: -0.65,
+          x: 0.14,
+          duration: 2.8,
+          ease: 'power2.inOut'
+        }, 0);
+      }
+
+      tourTimeline.to(state, {
+        camX: fExpl.pos.x,
+        camY: fExpl.pos.y,
+        camZ: fExpl.pos.z,
+        targetX: fExpl.target.x,
+        targetY: fExpl.target.y,
+        targetZ: fExpl.target.z,
+        fov: fExpl.fov,
+        explodeFactor: 1.0,
+        duration: 2.6,
+        ease: 'power2.out'
+      }, '+=0.2');
+
+      if (laptopRoot) {
+        tourTimeline.to(laptopRoot.rotation, {
+          y: Math.PI * 2 + 0.35,
+          x: 0.10,
+          duration: 6.5,
+          ease: 'none'
+        }, '<');
+      }
+
+      tourTimeline.to(state, {
+        camX: fAct.pos.x,
+        camY: fAct.pos.y,
+        camZ: fAct.pos.z,
+        targetX: fAct.target.x,
+        targetY: fAct.target.y,
+        targetZ: fAct.target.z,
+        fov: fAct.fov,
+        explodeFactor: 0.0,
+        lidOpenFactor: 1.0,
+        duration: 2.8,
+        ease: 'power3.inOut'
+      }, '+=0.1');
+
+      tourTimeline.to(state, {
+        camX: fIntro.pos.x,
+        camY: fIntro.pos.y,
+        camZ: fIntro.pos.z,
+        targetX: fIntro.target.x,
+        targetY: fIntro.target.y,
+        targetZ: fIntro.target.z,
+        fov: fIntro.fov,
+        viewOffsetX: fIntro.viewOffsetX,
+        viewOffsetY: fIntro.viewOffsetY,
+        duration: 2.2,
+        ease: 'power2.inOut'
+      }, '+=0.5');
+    }
+
+    function stopCinematicTour() {
+      if (!isCinematicTourActive) return;
+      isCinematicTourActive = false;
+      if (btnHeroTour) btnHeroTour.classList.remove('active');
+      if (tourTimeline) {
+        tourTimeline.kill();
+        tourTimeline = null;
+      }
+      const scrollP = masterScrollTrigger ? masterScrollTrigger.progress : 0;
+      if (scrollP >= 0.73 && scrollP <= 0.88) {
+        controls.enabled = true;
+        canvas.style.pointerEvents = 'auto';
+      }
+    }
+
+    if (btnHeroTour) btnHeroTour.addEventListener('click', startCinematicTour);
+
+    let isOrbitingExploded = false;
+    let orbitExplodedTween = null;
+
+    if (btnOrbitExploded) {
+      btnOrbitExploded.addEventListener('click', () => {
+        if (isOrbitingExploded) {
+          if (orbitExplodedTween) orbitExplodedTween.kill();
+          isOrbitingExploded = false;
+          btnOrbitExploded.classList.remove('active');
+          return;
+        }
+        isOrbitingExploded = true;
+        btnOrbitExploded.classList.add('active');
+        if (laptopRoot) {
+          const currentY = laptopRoot.rotation.y;
+          orbitExplodedTween = gsap.to(laptopRoot.rotation, {
+            y: currentY + Math.PI * 2,
+            duration: 8.5,
+            ease: 'none',
+            repeat: -1
+          });
+        }
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (isCinematicTourActive) stopCinematicTour();
+        if (isOrbitingExploded) {
+          if (orbitExplodedTween) orbitExplodedTween.kill();
+          isOrbitingExploded = false;
+          if (btnOrbitExploded) btnOrbitExploded.classList.remove('active');
+        }
+      }
+    });
+
+    if (btnHeroExplore) {
+      btnHeroExplore.addEventListener('click', () => {
+        const target = document.getElementById('sec-macro');
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+
+    // Hover Tooltip di Studio 360: Diletakkan di luar bounding box model di layar
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const smoothMouse = { x: 0, y: 0 };
+    const tooltip = document.getElementById('hover-tooltip');
+    let lastRaycast = 0;
+
+    window.addEventListener('mousemove', (e) => {
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      const ny = -(e.clientY / window.innerHeight) * 2 + 1;
+      mouse.set(nx, ny);
+
+      if (!controls.enabled) {
+        tooltip.style.display = 'none';
+        return;
+      }
+
+      const now = performance.now();
+      if (now - lastRaycast > 35) {
+        lastRaycast = now;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(Object.values(componentMeshes), false);
+        if (hits.length > 0) {
+          const hitObj = hits[0].object;
+          const title = hitObj.name.toUpperCase();
+          const desc = hitObj.userData.desc || 'Komponen Presisi';
+          tooltip.innerHTML = `${title}<span>${desc}</span>`;
+          tooltip.style.display = 'block';
+
+          // Tempatkan tooltip di luar bounding box model di layar agar tidak menutupi bodi laptop
+          const bounds = getModelScreenBounds();
+          const tipW = tooltip.offsetWidth || 200;
+          let tx;
+          if (e.clientX < window.innerWidth * 0.5) {
+            tx = Math.max(12, bounds.minX - tipW - 18);
+          } else {
+            tx = Math.min(window.innerWidth - tipW - 12, bounds.maxX + 18);
+          }
+          const ty = Math.max(76, Math.min(window.innerHeight - 140, e.clientY - 20));
+          tooltip.style.left = `${tx}px`;
+          tooltip.style.top = `${ty}px`;
+        } else {
+          tooltip.style.display = 'none';
+        }
+      }
+    });
+
+    /* ===========================================================
+       12. RESIZE & SINGLE REQUESTANIMATIONFRAME LOOP (60 FPS)
+    =========================================================== */
+    const lookTarget = new THREE.Vector3();
+    let currentViewOffsetX = 0;
+    let currentViewOffsetY = 0;
+    let isTabActive = true;
+
+    document.addEventListener('visibilitychange', () => {
+      isTabActive = !document.hidden;
+    });
+
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const wasMobile = isMobile;
+      isMobile = w < 768;
+
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+
+      if (wasMobile !== isMobile) {
+        setupPostProcessing();
+      } else if (composer) {
+        composer.setSize(w, h);
+      }
+
+      // Panggil ulang perhitungan fitCamera di semua tahap saat resize
+      if (laptopRoot) {
+        computeAllStageCameraFrames();
+        initMasterScrollTimeline();
+        ScrollTrigger.refresh();
+      }
+    });
+
+    function animate(nowMs) {
+      requestAnimationFrame(animate);
+      if (!isTabActive) return;
+
+      const t = nowMs * 0.001;
+
+      smoothMouse.x += (mouse.x - smoothMouse.x) * 0.05;
+      smoothMouse.y += (mouse.y - smoothMouse.y) * 0.05;
+
+      if (!prefersReducedMotion) {
+        stageGroup.position.y = Math.sin(t * 1.3) * 0.14;
+        if (!controls.enabled) {
+          stageGroup.rotation.y = smoothMouse.x * 0.05;
+          stageGroup.rotation.x = -smoothMouse.y * 0.03;
+        } else {
+          stageGroup.rotation.y *= 0.9;
+          stageGroup.rotation.x *= 0.9;
+        }
+      }
+
+      if (controls.enabled) {
+        camera.clearViewOffset();
+        controls.update();
+      } else {
+        const fw = cameraFocusState.weight;
+        const targetCamX = THREE.MathUtils.lerp(state.camX, cameraFocusState.camX, fw);
+        const targetCamY = THREE.MathUtils.lerp(state.camY, cameraFocusState.camY, fw);
+        const targetCamZ = THREE.MathUtils.lerp(state.camZ, cameraFocusState.camZ, fw);
+
+        const targetLookX = THREE.MathUtils.lerp(state.targetX, cameraFocusState.targetX, fw);
+        const targetLookY = THREE.MathUtils.lerp(state.targetY, cameraFocusState.targetY, fw);
+        const targetLookZ = THREE.MathUtils.lerp(state.targetZ, cameraFocusState.targetZ, fw);
+
+        camera.position.x += (targetCamX - camera.position.x) * 0.09;
+        camera.position.y += (targetCamY - camera.position.y) * 0.09;
+        camera.position.z += (targetCamZ - camera.position.z) * 0.09;
+
+        lookTarget.x += (targetLookX - lookTarget.x) * 0.09;
+        lookTarget.y += (targetLookY - lookTarget.y) * 0.09;
+        lookTarget.z += (targetLookZ - lookTarget.z) * 0.09;
+        camera.lookAt(lookTarget);
+
+        const effViewOffsetX = state.viewOffsetX * (1.0 - fw);
+        const effViewOffsetY = state.viewOffsetY * (1.0 - fw);
+        currentViewOffsetX += (effViewOffsetX - currentViewOffsetX) * 0.1;
+        currentViewOffsetY += (effViewOffsetY - currentViewOffsetY) * 0.1;
+
+        camera.fov += (state.fov - camera.fov) * 0.09;
+        if (Math.abs(currentViewOffsetX) > 0.5 || Math.abs(currentViewOffsetY) > 0.5) {
+          camera.setViewOffset(
+            window.innerWidth,
+            window.innerHeight,
+            currentViewOffsetX,
+            currentViewOffsetY,
+            window.innerWidth,
+            window.innerHeight
+          );
+        } else {
+          camera.clearViewOffset();
+        }
+        camera.updateProjectionMatrix();
+      }
+
+      const activeLidFactor = state.manualLidOverride !== null ? state.manualLidOverride : state.lidOpenFactor;
+      const activeExplode = state.manualExplodeOverride !== null ? state.manualExplodeOverride : state.explodeFactor;
+
+      if (displayPivot) {
+        const maxRad = THREE.MathUtils.degToRad(CONFIG.screenOpenAngle);
+        const dirSign = CONFIG.screenOpenAxisInvert ? -1 : 1;
+        const effectiveLidFactor = Math.max(activeLidFactor, activeExplode);
+        displayPivot.rotation.x = dirSign * effectiveLidFactor * maxRad;
+      }
+
+      updateExplodedState(activeExplode, nowMs);
+
+      if (componentMeshes['fan']) {
+        const fanSpeed = state.airflowAlpha > 0.05 ? 14.0 : 3.5;
+        componentMeshes['fan'].rotation.y += fanSpeed * 0.016;
+      }
+
+      // Update pencahayaan studio dinamis (terang & terbaca jelas di Exploded View)
+      if ('environmentIntensity' in scene) {
+        scene.environmentIntensity = state.envIntensity;
+      }
+      keyLight.intensity = state.keyLightIntensity;
+      rimLight.intensity = state.rimLightIntensity;
+      fillLight.intensity = state.fillLightIntensity;
+
+      if (floorMesh) {
+        // Contact shadow lembut tepat di bawah susunan exploded
+        floorMesh.position.y = -1.25 - activeExplode * 7.5;
+        const shadowScale = 1.0 + activeExplode * 0.45;
+        floorMesh.scale.set(shadowScale, shadowScale, 1.0);
+        floorMesh.material.opacity = Math.max(0.18, 0.45 * (1.0 - activeExplode * 0.35));
+      }
+
+      if (displayPanelMesh) {
+        drawScreenWindows11(t);
+        if (activeExplode < 0.15) {
+          const screenPower = activeLidFactor > 0.12 ? Math.max(state.screenBrightness, activeLidFactor * 0.72) : 0;
+          displayPanelMesh.material.emissive.setHex(0xffffff);
+          displayPanelMesh.material.emissiveIntensity = screenPower * 0.65;
+        }
+      }
+
+      if (keycapsMesh && activeExplode < 0.15) {
+        keycapsMesh.material.emissive.set(0x7cc4ff);
+        const pulse = 0.08 + Math.sin(t * 2.0) * 0.03;
+        keycapsMesh.material.emissiveIntensity = state.keyboardGlow * pulse;
+      }
+
+      // Partikel bulat lembut hanya muncul pada tahap fitur (Tahap 3)
+      const scrollP = masterScrollTrigger ? masterScrollTrigger.progress : 0;
+      const inFeatureStage = scrollP >= 0.49 && scrollP <= 0.73;
+      if (inFeatureStage && state.airflowAlpha > 0.02 && !prefersReducedMotion) {
+        airflowMat.opacity = state.airflowAlpha * 0.65;
+        const posArr = airflowGeom.attributes.position.array;
+        for (let i = 0; i < airflowCount; i++) {
+          const vel = airflowVel[i];
+          posArr[i * 3]     += vel.vx;
+          posArr[i * 3 + 1] += vel.vy;
+          posArr[i * 3 + 2] += vel.vz;
+
+          if (posArr[i * 3 + 2] < -14.0) {
+            posArr[i * 3]     = -7.5 + (Math.random() - 0.5) * 6.0;
+            posArr[i * 3 + 1] = 0.75 + (Math.random() - 0.5) * 0.5;
+            posArr[i * 3 + 2] = -5.0;
+          }
+        }
+        airflowGeom.attributes.position.needsUpdate = true;
+      } else {
+        airflowMat.opacity = 0;
+      }
+
+      if (composer && !isMobile) {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

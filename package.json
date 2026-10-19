@@ -1,0 +1,15 @@
+{
+  "name": "produk-cinematic",
+  "version": "1.0.0",
+  "description": "Proyek ini menyediakan skrip prosedural Blender Python (`bpy`) untuk menghasilkan model 3D laptop **Advan Workplus Air** dengan 20 komponen terpisah berorientasi efek *exploded view*, pivot di pusat massa, material PBR individu, hierarki *Empty parent*, serta ekspor otomatis ke file glTF/GLB (`laptop_advan_workplus_air.glb`).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}
